@@ -1,554 +1,594 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>確認テストポータル</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* カスタムアニメーションの設定 */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>確認テストポータル</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM (Development versions for Babel standalone) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel for in-browser JSX compilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+  </style>
 </head>
-<body class="bg-slate-50 text-gray-800 font-sans">
-    
-    <!-- アプリケーションが描画されるコンテナ -->
-    <div id="app"></div>
+<body class="bg-slate-50 text-gray-900 antialiased">
+  <div id="root"></div>
 
-    <script>
-        // --- 1. データ定義 ---
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-        // 2026OPLUS確認テストデータ (全75問)
-        const oplusQuizData = [
-          { id: 1, source: "問題1", question: "リアルワールドデータを用いた入院患者55,000例のTPN調査では、脂肪を含む静脈栄養管理が多く行われている現状が明らかになった。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "脂肪はほとんど投与されていなかった。" },
-          { id: 2, source: "問題2", question: "低栄養患者に対する栄養サポート実施の効果を検証したスイスのデータベース研究において、栄養サポート実施群では非実施群と比べて院内30日死亡率・再入院率が減少していた。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 3, source: "問題3", question: "中間的静脈栄養IPN: Intermediate Parenteral Nutritionとは、PPNとTPNの適応期間の中間にあたる1~2週間程度の静脈栄養管理を指す。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 4, source: "問題4", question: "IPNを検討すべき症例として、腸管安静を必要とする病態、嚥下障害のある病態、通過障害のある病態、などがあげられる。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 5, source: "問題5", question: "静脈経腸栄養ガイドライン(第3版)では、血栓性静脈炎予防の観点からPPN製剤と脂肪乳剤の同時投与は避けるべきであるとされている。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "PPN製剤と脂肪乳剤を同時に投与することにより浸透圧を下げることができるため、血栓性静脈炎の予防に有用である。BⅢと記載されている。" },
-          { id: 6, source: "問題6", question: "キドパレンの臨床第三相試験でキドパレン(本剤) 群の6割以上がステージG5D、透析期の患者さんであった。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 7, source: "問題7", question: "透析患者の原疾患の第1位は糖尿病性腎症で、死亡原因の第1位は感染症である。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 8, source: "問題8", question: "「急性または慢性腎臓病の入院患者における臨床栄養に関するESPEN実践ガイドライン」の中で「腎機能異常は、腎臓内科や内科病棟、外科病棟、集中治療(ICU)などさまざまな臨床場面で入院患者の間に広くみられる」という記載がある。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 9, source: "問題9", question: "CKDの患者さんがAKIを発症する事はほとんどない。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "CKDを基礎に有する者はAKI発症のリスクが高く、たとえ腎機能が前値に回復した場合でもCKDの進行が速まるリスクが上昇する。" },
-          { id: 10, source: "問題10", question: "RRT (腎代替療法)を受けている患者では、水溶性ビタミン(ビタミンB1、B6、C、葉酸)が透析により失われるため、補充を考慮する。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 11, source: "問題11", question: "小児の発育段階はいくつかの区分に分かれており、新生児期とは「生まれてから1歳まで」の間を指す。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "新生児期は生後28日まで。生後29日から1歳は乳児期とされる。" },
-          { id: 12, source: "問題12", question: "医療事故の再発防止に向けた提言第6号に記載されている、経鼻胃管留置位置確認方法の一覧表にはX線/X線造影のデメリットは特に記載されていない。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "「誤読の可能性がある」旨がデメリットとして記載されている。" },
-          { id: 13, source: "問題13", question: "患者によっては腎臓や回腸が胃に覆いかぶさってタムガイドの赤色光を遮ってしまい、腹壁で赤色光を確認できない可能性がある。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "腎臓ではなく肝臓、回腸ではなく横行結腸が覆いかぶさる可能性がある。" },
-          { id: 14, source: "問題14", question: "ICU入室患者では嚥下機能の低下や意識障害によって咳嗽反射が無い場合も多く、一般的に経鼻胃管の挿入が難しいと考えられる。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 15, source: "問題15", question: "関西医科大学小児外科学教室でタムガイドとX線検査による経鼻胃管留置位置確認に関して検討した結果、1例を除いてタムガイドとX線検査の結果が一致していた。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 16, source: "問題16", question: "「リアルワールドデータ研究からみるアミノ酸処方量と予後の関連」で、静脈栄養管理におけるアミノ酸投与推奨量は、国内のガイドラインでは0.8~1.0g/kg/日、米国のガイドラインでは0.8~1.5g/kg/日とされている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 17, source: "問題17", question: "内科系静脈栄養患者を対象としたリアルワールドデータの調査対象は、絶食期間が10日を超える入院患者(年齢≥18歳)で、絶食開始後4~10日目の経静脈的平均アミノ酸処方量を調査・検討している。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 18, source: "問題18", question: "内科系静脈栄養患者を対象としたリアルワールドデータの主要評価項目は院内死亡で、絶食開始後4~10日目の経静脈的平均アミノ酸処方量の増加と、院内死亡の減少との関連が認められた。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 19, source: "問題19", question: "内科系静脈栄養患者を対象としたリアルワールドデータの副次評価項目の一つに在院日数があり、リファレンスであるAdequate群に比べて、Moderate群は1.2日長い、Low群は1.5日長い、Very low群は2.9日在院日数が長いという結果であった。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 20, source: "問題20", question: "【EFFORT試験に関する問い】 低栄養リスクのある外科の入院患者を対象とした研究であった。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "外科ではなく、内科入院患者が対象である。" },
-          { id: 21, source: "問題21", question: "【EFFORT試験に関する問い】 栄養介入の約40%は静脈栄養によるサポートであった。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "約90%は食事やONSなどの経口栄養であった。" },
-          { id: 22, source: "問題22", question: "【EFFORT試験に関する問い】 個別化された栄養サポートが30日以内の全死亡率や身体機能の低下のリスクを減少させることが示された。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 23, source: "問題23", question: "【EFFORT試験に関する問い】 平均在院日数は約9日で急性期の短期間の栄養介入の効果をみた試験と言える。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 24, source: "問題24", question: "【誤嚥性肺炎リアルワールドデータ研究に関する問い】 65歳以上の誤嚥性肺炎入院患者で、7日以上絶食となっている患者が対象となっている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 25, source: "問題25", question: "【誤嚥性肺炎リアルワールドデータ研究に関する問い】 経静脈的なエネルギー・アミノ酸の処方量の増加が院内死亡の低下と関連していた。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "エネルギー処方量の増加は院内死亡率に影響を与えなかった。" },
-          { id: 26, source: "問題26", question: "【誤嚥性肺炎リアルワールドデータ研究に関する問い】 本研究の在院日数の中央値は30日を超えていた。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 27, source: "問題27", question: "【誤嚥性肺炎リアルワールドデータ研究に関する問い】 アミノ酸の処方量が0.6g/kg/日を超える患者はアミノ酸が処方されていない患者と比べて入院期間が短縮していた。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 28, source: "問題28", question: "がん悪液質の診断基準の一つとして、「過去6か月間で5%を超える体重減少」が提唱されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 29, source: "問題29", question: "がん悪液質の有病率を調査した海外の研究では、「過去6ヶ月で5%を超える体重減少」で定義した場合、膵癌一胃・食道癌→頭頸部癌の順に悪液質の有病率が高い事が示されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 30, source: "問題30", question: "日本肺癌学会の全国データベースを使用した研究では、がん悪液質と診断された群(過去6か月で5%以上の体重減少がある)はがん悪液質でない群と比べて、抗がん剤の奏効率が低く、生命予後が不良である事が示されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 31, source: "問題31", question: "がん悪液質は「通常の栄養サポートでは完全に回復することができず、進行性の機能障害に至る」とされ、栄養療法を実施する意義はないとされている。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "栄養療法のみでは回復する事が出来ないという意味であり、悪液質の症状に応じたマルチモーダル(多面的)な介入が推奨されている。" },
-          { id: 32, source: "問題32", question: "JSPENで2014年に行われたアンケート結果から、経腸栄養実施中に経験する消化器合併症として下痢をあげた施設が80%以上に及んだ。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 33, source: "問題33", question: "「経腸栄養のリスクマネジメント」 スライドで示されている、経腸栄養関連下痢対策のためのアルゴリズムにおいて、経腸栄養実施中の下痢を認めたらただちに投与速度を下げることが示されている。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "下痢を認めたら水様性下痢の頻度や発熱・白血球数/CRPを確認し、その後の方策を考えるフローが示されている。" },
-          { id: 34, source: "問題34", question: "半固形化栄養法は消化器合併症対策として活用されており、メタ解析においても下痢の低減に有用であることを示した。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "胃食道逆流の低減、胃内滞留時間・ケア時間の短縮に有用であることを示しており、下痢に対する有用性は示していない。" },
-          { id: 35, source: "問題35", question: "1.6kcal/mLの経腸栄養製品の水分比率は80%である。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "1.6kcal/mL (イノラス)の水分比率は75%である。" },
-          { id: 36, source: "問題36", question: "腸内細菌叢に負の影響を与える因子としては薬剤の影響が大きく、PPIは特にその影響が大きいことが示されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 37, source: "問題37", question: "ディスバイオシスの影響から下痢に至る経路、便秘に至る経路いずれも想定されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 38, source: "問題38", question: "水溶性食物繊維は蠕動運動を促進することから便秘に役割を果たし、不溶性食物繊維は短鎖脂肪酸を産生し下痢に対する効果を示す。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "水溶性食物繊維は、主に発酵性が高く短鎖脂肪酸を産生し、下痢に対する効果を示す一方、不溶性食物繊維は発酵性が低いが便の形成や排便促進に役立ち、便秘に効果を示すとされている。" },
-          { id: 39, source: "問題39", question: "腸内細菌の種類は1000種類以上であり、細菌数として100兆個程度とされている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 40, source: "問題40", question: "ハイネックスゼリーの粘度の参考とした胃食道逆流の抑制が期待できる粘度 (6,000mPa.s~10,000mPa・s)は、B型粘度計 6回転/分で試験をしている。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "B型粘度計12回転/分で試験されている。" },
-          { id: 41, source: "問題41", question: "ハイネックスゼリーとイノソリッド配合経腸用半固形剤の粘度は同等である。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 42, source: "問題42", question: "コラーゲンペプチド (CP)の機能性リーフレット (08896) はハイネックスゼリーの報告として紹介できる。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "栄養素の機能性の情報提供であり、ハイネックスシリーズの報告ではない。" },
-          { id: 43, source: "問題43", question: "ハイネックスゼリーとイノソリッド配合経腸用半固形剤の食塩相当量は同量(1日標準量において食塩相当量が3~5g)である。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "【参考】300g/袋あたりの食塩相当量は、ラコールNF配合経腸用半固形剤 0.57g、イノソリッド配合経腸用半固形剤1g、ハイネックスゼリー 1.35gと異なる。" },
-          { id: 44, source: "問題44", question: "ハイネックスゼリーとイノソリッド配合経腸用半固形剤の900kcalあたりのカリウムの量は、ラコールNF配合経腸用半固形剤の1600kcalあたりと同量である。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "ラコールNF半固形剤1200kcalと同量(1656mg)である。" },
-          { id: 45, source: "問題45", question: "ハイネックスゼリーとイノソリッド配合経腸用半固形剤の900kcalあたりのカリウムの量は、CKDの食事療法基準 ステージ4のカリウム量より多い。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 46, source: "問題46", question: "清潔間欠自己導尿 (CIC)の目的の1つは、カテーテル留置からの解放により、患者の活動性・QOLの向上が期待できる。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 47, source: "問題47", question: "在宅自己導尿指導管理料・特殊カテーテル加算の算定データより、在宅CIC患者は増加しており、親水性カテーテルのみ算定患者数は増加している。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "すべてのカテーテルで算定患者数は増加している。" },
-          { id: 48, source: "問題48", question: "再利用型カテーテルでは、カテーテルと保存用ケースがセットになっており、ケースの消毒液は導尿時に毎回交換する。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "消毒液は1日1回交換する。" },
-          { id: 49, source: "問題49", question: "令和2年診療報酬改定により、特殊カテーテル加算は、親水性コーティングを有するものは1700点・1900点・2100点と、本数にあわせて3段階の点数を算定できるようになった。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 50, source: "問題50", question: "各カテーテルのコストシミュレーションにより、施設の差益を考えると、単価の高い親水性カテーテルを使うことで施設の差益は減る。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "施設の差益は、診療報酬点数(収入)とカテーテル・物品コスト合計(支出)の差を考えるため、親水性カテーテルを使うことで必ずしも施設の差益は減るとはいえない。" },
-          { id: 51, source: "問題51", question: "再利用型カテーテルと親水性カテーテルの併用メソッドは、例としては、1日の導尿回数が多い方、外出時に導尿を行う方、などに提案を行う。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 52, source: "問題52", question: "サルコペニアは、「筋肉」の「減少」を意味するギリシア語が語源となっており、加齢以外にも様々な原因で発症する事が示されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 53, source: "問題53", question: "がん患者の場合、CTで第3腰椎部 (L3)の筋肉の面積を計測して、身長の2乗で補正し、SMI (骨格筋指数)を算出している研究が多い。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 54, source: "問題54", question: "東大病院に入院した消化器がん・泌尿器がん患者2869例を対象にした研究では、Fujiwara基準に基づくサルコペニアの有病率は17.8%であり、他の診断基準を使うよりも、予後(生存率)の予測能力が高い事が示された。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 55, source: "問題55", question: "プレハビリテーションとは、術前から栄養・運動、心理的なサポートを実施し、患者さんの身体機能や筋肉量を維持する取り組みで、貯筋活動とも言える。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 56, source: "問題56", question: "腹部外科手術を対象にした最近のメタ解析では、プレハビリテーションとして運動だけでなく栄養も取り入れた方が、身体機能の向上と術後合併症の軽減が期待できる事が示されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 57, source: "問題57", question: "日本食道学会のアンケート調査によると、NAC (術前補助化学療法) 中のプレハビリテーション導入率は89%である事が示されている。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "89%が誤り。導入率は39%であった。" },
-          { id: 58, source: "問題58", question: "排尿障害で多いものとして 前立腺肥大症、過活動膀胱、夜間頻尿が挙げられる。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 59, source: "問題59", question: "18歳以上を対象とした日本の国民健康調査を用いた横断研究によると、過活動膀胱の有無とフレイルの増加に関連性は無かった。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "過活動膀胱ありではフレイルが増加し、フレイルありでは過活動膀胱が増加する。" },
-          { id: 60, source: "問題60", question: "夜間頻尿の治療はフレイル、さらには要介護を防ぐうえで非常に重要である。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 61, source: "問題61", question: "前立腺肥大症と過活動膀胱を合併しているケースは多い。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 62, source: "問題62", question: "排尿障害に対する投薬治療において、1ブロッカー、抗コリン薬、B3作動薬のいずれも、尿閉を起こしやすいため注意が必要である。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "1ブロッカーは前立腺肥大症に伴う排尿障害の改善薬で、排尿を促進することから、尿閉を起こしやすい薬剤には該当しない。過活動膀胱で使用する3作動薬、特に抗コリン薬では尿閉に注意が必要である。" },
-          { id: 63, source: "問題63", question: "夜間頻尿診療ガイドライン [第2版]によると、夜間頻尿患者に対して残尿測定は必須だと位置づけられている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 64, source: "問題64", question: "ESPENのICUガイドライン (2023年)では、経口・経腸栄養が実施困難禁忌の場合、3日から7日以内に静脈栄養を実施する事が推奨されている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 65, source: "問題65", question: "ICUにおける研究で、安静時エネルギー消費量 (REE)に対して投与エネルギー量が多すぎても、少なすぎても予後が不良であると示されており、エネルギー充足率が30%と少なすぎる栄養管理が最も生存率が低いという結果であった。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 66, source: "問題66", question: "アメリカ、日本、共に集中治療領域のガイドラインでは、経腸栄養が不十分な重症患者に対して静脈栄養を追加する事が推奨されている。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "ASPEN2021→「ICU入室の7日目までSPNを開始しないことを推奨する」、JCCNG2024 (日本版重症患者の栄養療法ガイドライン)→ 「経腸栄養が不十分な重症患者に対して静脈栄養を追加すべきではない」とされている。" },
-          { id: 67, source: "問題67", question: "低栄養リスクが高く、経腸栄養の認容性が低い腹部手術患者において、術後3日以内の早期SPNは院内感染(8.7%vs18.4%) を有意に低下させた。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 68, source: "問題68", question: "蘇生会総合病院、土師先生が運用している栄養管理バンドルでは、「補完的早期静脈栄養」,「早期高蛋白投与(1.2g/kg以上)」といった実施項目が盛り込まれている。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 69, source: "問題69", question: "マスク換気による胃の膨満が術野を妨げるため、特に腹腔鏡、ロボット手術では胃減圧が必要である。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 70, source: "問題70", question: "消化器外科術後に胃管を留置する事で、胃内容物を体外へ誘導し、嘔吐の軽減、誤嚥の予防、縫合部への負担軽減が期待できる。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 71, source: "問題71", question: "ERASでは、食道、胃、大腸いずれのガイドラインでも、術後のルーチンな(予防的な) 胃管挿入は推奨されていない。", options: ["正しい", "誤り"], correctAnswer: 0, explanation: "正しい文章のため解説なし。" },
-          { id: 72, source: "問題72", question: "EDチューブは、胃内のみの留置を目的としている。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "EDチューブは、胃・十二指腸・空腸への留置が可能で、スタイレットと錘(オリーブ)が付いている。" },
-          { id: 73, source: "問題73", question: "タムガイド使用時にEDチューブを使用する場合、ファイバー先端は、オリーブ先端まで挿入するのが望ましい。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "ファイバー先端は、オリーブとチューブの境目から、1~2cm離して設置することが推奨されている。" },
-          { id: 74, source: "問題74", question: "J034-2(経鼻栄養・薬剤投与用チューブ挿入術)の算定には、必ずX線透視による確認が必要であり、タムガイドのみでの確認では算定できない。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "X線が使用できない環境下で、タムガイドを使用した場合でも算定可能。" },
-          { id: 75, source: "問題75", question: "MET光ガイドカテーテルシステムと併用可能な栄養チューブは、ニューエンテラルフィーディングチューブ(カーディナルヘルス社製) 10Frのみである。", options: ["正しい", "誤り"], correctAnswer: 1, explanation: "10Frではなく12Frである。" }
-        ];
+    // --- SVG Icons ---
+    const StethoscopeIcon = ({ className = "w-6 h-6" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+        <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+        <circle cx="20" cy="10" r="2"/>
+      </svg>
+    );
 
-        // コンプライアンス確認テストデータ (全45問)
-        const complianceQuizData = [
-          { id: 1, source: "Q058-1", question: "A医師会と共催で自社医薬品に関連する講演会を開催します。演者であるA医師会の医師から、講演用資料として自分が執筆した医学雑誌(定価5,500円)を参加者全員に配布して欲しい旨の要請がありました。この医学雑誌を配布してもよいでしょうか。", options: ["配布できる", "配布できない"], correctAnswer: 0, explanation: "当該医学雑誌は自社医薬品に関連する講演用の資料として使用するものであり、また、自社医薬品に関する情報媒体でもあるので、購入単価に関係なく参加者全員に提供することができます。" },
-          { id: 2, source: "Q058-2", question: "地域の中核病院であるA病院との共催で自社医薬品の講演会を企画しました。講演会の前にA病院の「院内研修会」が同じ会場で約1時間予定されていることがわかりました。「院内研修会」を含めた会場費を負担してもよいでしょうか。", options: ["負担できる", "負担できない"], correctAnswer: 1, explanation: "院内研修会に関わる費用は病院側が負担すべきものであり、メーカーが負担すると不当な景品類の提供にあたるおそれがあるため、負担できません。" },
-          { id: 3, source: "Q058-3", question: "自社医薬品のWeb講演会（発信会場:ホテル）の受信会場は全国47会場で、20時開始予定です。これに先立ち、19時から一部の受信会場では役割者（演者・座長）である治験医師による講演も行われます。演者・座長への謝礼を支払うことはできますか。", options: ["支払うことができる", "支払うことはできない"], correctAnswer: 0, explanation: "Web講演会の受信会場であっても、演者・座長等の役割者がいる場合、謝礼を支払うことができます。" },
-          { id: 4, source: "Q059-1", question: "A大学附属病院と共催で自社医薬品の講演会を開催することになりました。参加対象はA大学附属病院と2つの分院に所属する医師、薬剤師です。医薬品の購入は独立していますが、同一法人に属しています。このような共催講演会を実施することはできるでしょうか。", options: ["実施できる", "実施できない"], correctAnswer: 1, explanation: "A大学附属病院と2つの分院は、同一の法人に属していますので、単独の医療機関とみなされます。単独の医療機関を対象とした共催講演会は実施できません。" },
-          { id: 5, source: "Q059-2", question: "自社医薬品の講演会について、予め趣旨を反映した内容で事前収録を行い、当日に集合会場で講演内容を映写し、引き続いてインターネット通信を利用して同じ演者によるライブでの質疑応答を行う企画です。これを自社医薬品の講演会として懇親行事を含めて開催できますか。", options: ["開催できる", "開催できない"], correctAnswer: 0, explanation: "録画による講演の映写であっても、ライブ形式で質疑応答が予定されているため、口頭説明が基本、ライブ形式、双方向のやりとりを満たしているとみなし、開催できます。" },
-          { id: 6, source: "Q060-1", question: "Aクリニックから忘年会の案内状が届きました。会場は人気のビール園で参加費が2万円です。出席者はクリニック院長他職員など総勢25名です。一般的なパーティープランは3千円〜5千円程度です。このような忘年会に参加してもよいでしょうか。", options: ["参加できる", "参加できない"], correctAnswer: 1, explanation: "今回の参加費2万円は、実施場所、内容からみて実費相当額とは判断できないので参加できません。" },
-          { id: 7, source: "Q060-2", question: "A医院より忘年会の案内状をいただきました。Bホテルにて参加費2万円(二次会費込み)となっています。弊社は一次会のみ参加しようと考えていますが、参加費2万円を支払って参加してもよいでしょうか。", options: ["参加できる", "参加できない"], correctAnswer: 1, explanation: "出席しない二次会の費用負担は「実費相当額を超える参加費」とみなされます。一次会と二次会の費用を明記した案内状を新たに作成していただき、一次会の金額が実費相当と確認できれば一次会のみの参加費を支払って参加できます。" },
-          { id: 8, source: "Q060-3", question: "A医院からの忘年会（参加費1万円は実費相当額）の案内状に、MRは参加費に加えて3千円程度の品物を持参するよう記載がありました。少額な景品類と考え持参できるでしょうか。", options: ["持参できる", "持参できない"], correctAnswer: 1, explanation: "MRにのみ物品を要請されている場合は、不当な景品類の提供となり持参できません。参加者全員が平等に妥当な額の物品を持参する場合を除き、医療機関等主催の親睦会合での金品提供は制限されます。" },
-          { id: 9, source: "Q061-1", question: "医療機関主催の忘年会の案内状に、参加費(実費相当)に加え2千円程度の景品を提供するように書かれています。当社は別の予定があり参加できませんが、景品を提供することはできるでしょうか。", options: ["提供できる", "提供できない"], correctAnswer: 1, explanation: "医療機関の親睦会合に参加せずに景品を提供することはできません。名目のいかんを問わず金品を提供することは規約で制限されます。" },
-          { id: 10, source: "Q061-2", question: "Aクリニックより院内レクリエーション参加の案内がありました。案内状には、ボウリング大会(2千円)、その後に懇親会(5千円)と記載があります。参加費は医師・スタッフと同額であり、それぞれ実費相当額のようです。この行事に参加してもよいでしょうか。", options: ["参加できる", "参加できない"], correctAnswer: 0, explanation: "ボウリング、懇親会と複数のイベントが企画されていますが、参加費はそれぞれ実費相当額と判断できるため、当該行事への参加は規約で制限されません。" },
-          { id: 11, source: "Q061-3", question: "A病院から忘年会（会費1万円・実費相当）の案内がありました。例年、一次会のあと病院職員数名とメーカー数社で二次会に行き、二次会の費用は参加メーカーで均等に負担することになっています。この二次会に参加してもよいでしょうか。", options: ["参加できる", "参加できない"], correctAnswer: 1, explanation: "一次会の参加費が実費相当であると確認出来れば一次会には参加できますが、二次会の費用を参加メーカーで負担することはできません。" },
-          { id: 12, source: "Q062-1", question: "A学会地方会よりプログラム抄録への広告募集の依頼がありました。収支予算書では広告掲載料収入130万円、プログラム抄録作成費80万円となっています。この広告掲載に応じてもよいでしょうか。", options: ["応じてもよい", "応じるべきではない"], correctAnswer: 1, explanation: "印刷媒体の場合、広告料収入が媒体作成費用を大幅に上回る場合は、当業界の定める「相応の広告料」には当りませんので、広告掲載の依頼に応じるべきではありません。" },
-          { id: 13, source: "Q062-2", question: "A病院が地域住民と親睦をはかるため開催する納涼祭（盆踊り、花火、模擬店など）において、地域住民等に配布するパンフレットへの広告依頼がありました。応じてもよいでしょうか。", options: ["応じてもよい", "応じてはならない"], correctAnswer: 1, explanation: "遊び、サービスが中心である「まつり」のパンフレットは、本来医療機関が自らの費用で作成、使用するものですので、広告媒体として相応しくありません。" },
-          { id: 14, source: "Q063-1", question: "A地区医師会の設立30周年記念誌への広告掲載の案内がありました。広告掲載料は1ページ3万円、半ページ2万円です。作成部数200部、作成費用50万円ですが、募集総額、募集数は不明です。この広告掲載募集に応じてもよいでしょうか。", options: ["応じてもよい", "応じることはできない"], correctAnswer: 1, explanation: "広告スペースごとの料金・募集数を、広告掲載案内に記載していただき、相応の広告料の範囲内であるかどうか確認する必要があります。現状では応じることはできません。" },
-          { id: 15, source: "Q063-2", question: "市内のホテルで〇〇市医師会と共催で、複数施設の医療関係者を対象とした、自社医薬品に関連しない「地域包括ケアシステム」をテーマとした講演会を企画しています。このような共催講演会は開催できますか。", options: ["開催でき、茶菓・弁当等も提供可能", "開催できるが、茶菓・弁当・懇親行事等は提供不可", "自社医薬品に関連しないため開催できない"], correctAnswer: 1, explanation: "自社医薬品に関連しない医療関連テーマであっても共催の講演会は開催できます。ただし、会合費用以外の景品類である「懇親行事、一般参加者の旅費、贈呈品、茶菓・弁当等」は提供できません。" },
-          { id: 16, source: "Q063-3", question: "複数の病院の医療担当者約30名を対象に、自社医薬品に関連しないテーマの主催講演会を市内のホテルで開催します。講師謝礼、講師旅費、会場費に加え、茶菓・弁当を提供できますか。", options: ["すべて提供できる", "講師謝礼・旅費・会場費は支払えるが、茶菓・弁当は提供できない", "いずれも支払いや提供ができない"], correctAnswer: 1, explanation: "自社医薬品に関連しないテーマの主催講演会ですので、会合費用以外の景品類である茶菓・弁当の提供はできません。会合費用である「講師謝礼、講師旅費、会場費」は支払うことができます。" },
-          { id: 17, source: "Q064-1", question: "A病院の当直医師に医薬情報活動を行います。夕食時間帯となるため、医薬情報活動に伴う飲食提供として、3千5百円のうな重を持参してもよいでしょうか。", options: ["持参できる", "持参できない"], correctAnswer: 1, explanation: "5千円を超えない飲食提供が許容されるのは、院内で相応しい場所や時間を確保できない場合に、喫茶等での活動を許容するものです。夕食時間帯等であっても、医療機関内に弁当を持参したり出前を取ることはできません。" },
-          { id: 18, source: "Q064-2", question: "A卸の支店長が、Bクリニックの院長をゴルフ接待する際、当社C所長の同伴プレーを求めてきました。院長の費用はすべてA卸が負担し、C所長は自分の費用のみ負担します。同伴してもよいでしょうか。", options: ["同伴できる", "同伴すべきではない"], correctAnswer: 1, explanation: "院長から見た場合、ゴルフ接待自体を卸とメーカーの両者から提供を受けたと認識することが想定され、規約違反に問われるおそれがあります。自分の費用のみ負担するとしても同伴すべきではありません。" },
-          { id: 19, source: "Q064-3", question: "A学会におけるバナー広告の依頼を受けました。紙媒体は作成せず、学会員専用Web上のプログラムにてバナー広告を掲示するものです。広告期間5カ月、掲載料金10万円です。応募できますか。", options: ["応募できる", "応募できない"], correctAnswer: 0, explanation: "応募することができます。ただし、学会等におけるバナー広告については、その広告料が、社会通念を大幅に超えるものでない相応の対価であることを確認する必要があります。" },
-          { id: 20, source: "Q065-1", question: "災害が発生し担当先の多くの医療機関が被災しました。そこで担当先の医療機関等で散乱物の後片付け等、支援活動を行いたいのですが、過大な労務提供として規約違反に問われることはないでしょうか。", options: ["規約違反に問われることはない", "規約違反になるため実施できない"], correctAnswer: 0, explanation: "災害復旧のための労務提供は、義援金、見舞金、水等の援助物資と同様、医療用医薬品の取引に付随しないものとして扱うため、規約上の制限を受けません。" },
-          { id: 21, source: "Q065-2", question: "A大学病院の機関誌（200部発行予定）への広告依頼がありました。広告料募集総額は90万円、媒体作成諸費用は100万円（印刷費90万＋郵送料10万）です。このような広告に応募できるでしょうか。", options: ["応募できる", "応募できない"], correctAnswer: 0, explanation: "広告料の総額が媒体作成費用の範囲内であり、個人費用の指標を満たしているなど相応の広告料であると判断できれば応募できます。" },
-          { id: 22, source: "Q066-1", question: "旭川医科大学病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 1, explanation: "開設者は「国立大学法人」です。法人の職員となるため「みなし公務員」になります。" },
-          { id: 23, source: "Q066-1", question: "岩手医科大学附属病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 2, explanation: "開設者は「学校法人」です。法人の職員となるため「民間」になります。" },
-          { id: 24, source: "Q066-1", question: "防衛医科大学校病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 0, explanation: "開設者は「防衛省」です。防衛省の中に配置されており、その職員となるため「公務員（国家公務員）」になります。" },
-          { id: 25, source: "Q066-1", question: "厚生(医療)農業協同組合連合会 上越総合病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 2, explanation: "開設者は「厚生(医療)農業協同組合連合会」です。その団体の職員となるため「民間」になります。" },
-          { id: 26, source: "Q066-1", question: "東京警察病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 2, explanation: "開設者は「一般財団法人 自警会」です。その団体の職員となるため「民間」になります。" },
-          { id: 27, source: "Q066-1", question: "浜松労災病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 1, explanation: "開設者は「独立行政法人 労働者健康安全機構」です。その団体の職員となるため「みなし公務員」になります。" },
-          { id: 28, source: "Q066-1", question: "ＪＣＨＯ大阪病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 1, explanation: "開設者は「独立行政法人 地域医療機能推進機構」です。その団体の職員となるため「みなし公務員」になります。" },
-          { id: 29, source: "Q066-1", question: "富山市立富山市民病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 0, explanation: "開設者は「富山市」です。地方自治体の職員となるため「公務員（地方公務員）」になります。" },
-          { id: 30, source: "Q066-1", question: "川崎市立多摩病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 2, explanation: "開設者は「学校法人 聖マリアンナ医科大学」です。指定管理者制度に基づき同法人が管理・運営しているため、その職員となり「民間」になります。" },
-          { id: 31, source: "Q066-1", question: "広島市立広島市民病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 1, explanation: "開設者は「一般地方独立行政法人」です。その団体の職員となるため「みなし公務員」になります。" },
-          { id: 32, source: "Q066-1", question: "済生会松山病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 2, explanation: "開設者は「社会福祉法人 恩賜財団」です。その団体の職員となるため「民間」になります。" },
-          { id: 33, source: "Q066-1", question: "産業医科大学病院の先生の身分はどれに該当しますか？", options: ["公務員", "みなし公務員", "民間人"], correctAnswer: 2, explanation: "開設者は「学校法人 産業医科大学」です。その団体の職員となるため「民間」になります。" },
-          { id: 34, source: "Q066-2", question: "公立大学法人の医学部附属病院の部長に特別講演を依頼しました。交通便が悪いのでタクシーチケットを提供しようと思います。問題ないでしょうか？", options: ["提供して問題ない", "タクシーチケットは金券扱いなので提供できない", "施設規定で認められていれば、事務方に確認して提供して問題ない"], correctAnswer: 2, explanation: "開設者は「公立大学法人」であり「みなし公務員」になります。事業企画申請時において、当該施設の事務方（タクシー利用確認者）に確認し、指定の記載等を行えば提供可能です。" },
-          { id: 35, source: "Q066-2", question: "国立病院機構の病院の部長に特別講演（1時間）を依頼しました。謝礼はいくら支払うことができますか？（国立病院機構倫理規程に基づく）", options: ["3万円", "4万円（高度な専門性を有する場合は10万円程度も可）", "依頼することはできない"], correctAnswer: 1, explanation: "国立病院機構倫理規程では講演料等は1時間当たり4万円程度と記載されていますが、医学等に関する高度な専門性を有する場合は10万円程度の受領が可能となっています。" },
-          { id: 36, source: "Q066-2", question: "国立病院機構の病院の医師に、自社の社内研修会講師（1時間）を依頼しました。謝礼はいくら支払うことができますか？", options: ["3万円", "4万円", "依頼することはできない"], correctAnswer: 2, explanation: "国立病院機構の倫理規程で、職員が営利企業の社員だけのために講演を行うことは、国民の疑惑や不信を招く恐れがあるため、謝礼を受け取って講演を行うことはできません。" },
-          { id: 37, source: "Q066-3", question: "利害関係者について。製薬企業の社員(MR等)は、国立病院機構の医師等にとって利害関係者に該当しますか？", options: ["該当する", "該当しない"], correctAnswer: 0, explanation: "MR等の行為は自社の製品の販売促進等のために病院職員に接触することが多く、病院と契約関係にある医薬品販売業者の利益のための行為（代理行為）を行っていると言わざるを得ないため、利害関係者に該当します。" },
-          { id: 38, source: "Q066-3", question: "利害関係者について。医師会は、一般的に国立病院機構の病院職員にとって利害関係者に該当しますか？", options: ["該当する", "該当しない"], correctAnswer: 1, explanation: "医師会ということをもって直ちに利害関係者に該当するものではありません。委託契約がある場合等を除き、通常は利害関係はないと判断されます。" },
-          { id: 39, source: "Q066-3", question: "利害関係者について。電気・ガス・水道等の公益事業者、地方自治体等の職員は、国立病院機構の病院職員にとって利害関係者に該当しますか？", options: ["該当する", "該当しない（ただし契約事務担当職員にとっては該当する場合がある）"], correctAnswer: 1, explanation: "電気・ガス・水道等は価格設定等に裁量の余地がほとんどないため除外されています。その他の地方自治体等の職員も直ちに該当しませんが、契約等がある場合は契約担当職員にとって利害関係者になります。" },
-          { id: 40, source: "Q066-3", question: "利害関係者について。マスコミ（新聞記者、放送関係者など）は、国立病院機構の病院職員にとって利害関係者に該当しますか？", options: ["該当する", "該当しない（ただし広告契約等がある場合は契約担当職員にとって該当）"], correctAnswer: 1, explanation: "一般にマスコミとの間には契約等利害関係者につながる関係がないと考えられるため該当しません。ただし広告の契約等がある場合は、契約担当職員の利害関係者として取り扱います。" },
-          { id: 41, source: "Q066-3", question: "国立病院機構の病院の外科系診療科全体で、昼休み（12:15〜12:45）に製品説明会を実施します。食事時間帯のため、弁当を提供してもよいでしょうか。", options: ["職務内とみなされ、提供できる", "職務外とみなされるため、提供できない"], correctAnswer: 1, explanation: "昼休み（休憩時間）は職務外となるため、利害関係者から無償で弁当の提供を受けることは禁止行為となります。" },
-          { id: 42, source: "Q066-3", question: "国立病院機構の病院の部長が、職務外で参加する学会において、ランチョンセミナーで弁当を配布された場合、受け取ることができるでしょうか。", options: ["受け取ることができる", "受け取ることはできない"], correctAnswer: 1, explanation: "職務外で学会に参加する場合、利害関係者から提供される弁当を受け取ることは出来ません。自己の費用を負担して飲食することになります。" },
-          { id: 43, source: "Q066-3", question: "国立病院機構の病院の部長が、製薬会社主催の講演会に演者（役割者）として参加しました。講演会終了後、懇親会（立食形式：約30名）に出席できるでしょうか。", options: ["出席できる", "出席できない"], correctAnswer: 0, explanation: "講演会終了後に多数の者が出席する（20人以上）立食パーティーにおいて利害関係者から飲食物の提供を受けることは、倫理規程上、例外として認められています。" },
-          { id: 44, source: "Q067-1", question: "団体性が認められるA研究会（学術集会と機関誌を発行）から寄附要請がありました。予算書では個人費用50万円、施設年会費90万円と記載があります。寄附要請に応じてよいでしょうか。", options: ["応じることができる", "応じることはできない"], correctAnswer: 0, explanation: "施設年会費で個人費用が賄われていると判断できる（個人費用の指標を満たしている）ため、寄附金を拠出することが出来ます。" },
-          { id: 45, source: "Q067-2", question: "NPO法人の理事であるA先生から寄附を依頼されました。この法人の活動内容は、B病院の受診勧誘に特化したものです。予算書で個人費用に問題はありません。このNPO法人へ寄附できますか。", options: ["寄附できる", "寄附できない"], correctAnswer: 1, explanation: "活動内容が特定の病院の受診勧誘に特化しており、実質的にB病院の通常の医療業務に対する金銭提供となるため、規約で制限され寄附できません。" }
-        ];
+    const ScaleIcon = ({ className = "w-6 h-6" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+        <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+        <path d="M7 21h10"/>
+        <path d="M12 3v18"/>
+        <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+      </svg>
+    );
 
-        // --- 2. アイコンSVG文字列 ---
-        const icons = {
-            checkCircle: `<svg class="w-5 h-5 text-green-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-            xCircle: `<svg class="w-5 h-5 text-red-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
-            arrowRight: `<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
-            arrowLeft: `<svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`,
-            rotateCcw: `<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`,
-            trophy: `<svg class="w-12 h-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
-            alertCircle: `<svg class="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-            bookOpen: `<svg class="w-6 h-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
-            checkCircleLg: `<svg class="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-            stethoscope: `<svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>`,
-            scale: `<svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`
-        };
+    const ArrowRightIcon = ({ className = "w-5 h-5" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+      </svg>
+    );
 
-        // --- 3. 状態管理変数 ---
-        let currentView = 'menu'; // 'menu' または 'quiz'
-        let activeQuizData = [];
-        let activeQuizTitle = "";
-        
-        // クイズ進行用ステート
-        let currentQuestion = 0;
-        let score = 0;
-        let scoreAtBlockStart = 0;
-        let showResult = false;
-        let showIntermediate = false;
-        let selectedOption = null;
-        let isAnswered = false;
+    const ArrowLeftIcon = ({ className = "w-5 h-5" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
+      </svg>
+    );
 
-        // --- 4. 共通ロジック ---
-        window.startQuiz = function(type) {
-            if (type === 'oplus') {
-                activeQuizData = oplusQuizData;
-                activeQuizTitle = "2026OPLUS確認テスト";
-            } else if (type === 'compliance') {
-                activeQuizData = complianceQuizData;
-                activeQuizTitle = "コンプライアンス確認テスト";
-            }
-            
-            // クイズ状態の初期化
-            currentQuestion = 0;
-            score = 0;
-            scoreAtBlockStart = 0;
-            showResult = false;
-            showIntermediate = false;
-            selectedOption = null;
-            isAnswered = false;
-            currentView = 'quiz';
-            
-            render();
-        };
+    const CheckCircleIcon = ({ className = "w-8 h-8" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
+      </svg>
+    );
 
-        window.backToMenu = function() {
-            if (!showResult && !showIntermediate && currentQuestion > 0) {
-                const confirmLeave = confirm("テストの途中ですが、メニューに戻りますか？\n（進捗はリセットされます）");
-                if (!confirmLeave) return;
-            }
-            currentView = 'menu';
-            render();
-        };
+    const BookmarkIcon = ({ className = "w-5 h-5", solid = false }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={solid ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+      </svg>
+    );
 
-        function getOptionStyle(index) {
-            if (!isAnswered) {
-                return "bg-white border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-700 cursor-pointer";
-            }
-            
-            const isCorrectOption = index === activeQuizData[currentQuestion].correctAnswer;
-            const isSelectedOption = index === selectedOption;
+    // --- Sample Data (Extracted from PDF) ---
+    const QUIZ_DATA = {
+      basic: {
+        title: "製品知識：Basic編 (60問)",
+        desc: "栄養管理、リアルワールドデータ、各種疾患・治療などに関する総合的な確認テストです。",
+        countLabel: "全60問",
+        questions: [
+          { id: 1, question: "浸透圧の説明について、誤っているものを選びなさい。", choices: ["水は浸透圧の低い方から高い方へ移動する", "浸透圧を表す単位はmOsm/Lである。", "ブドウ糖はイオン化する物質である。", "体液の浸透圧の基準値は約285mOsm/Lである。", "イオン化しない物質の場合には、浸透圧とモル濃度は等しい(1mmol/L=1mOsm/L)"], correctIndex: 2, explanation: "イオン化しない物質としてブドウ糖、尿素、尿酸などがある。イオン化しない物質の浸透圧はモル濃度に等しく(1mmol/L=1mOsm/L)、イオン化する場合はモル濃度より大きくなる。" },
+          { id: 2, question: "水電解質輸液とその説明で、誤っているものを選びなさい。", choices: ["ビカネイト輸液:等張電解質輸液であり、細胞外液全体を補充する", "ボルベン輸液6%:血漿増量剤あるいは代用血漿剤ともいわれ、血管内の循環血液量を増加させる目的で投与される", "KN1号輸液:1/2生食でありカリウムを含んでいない比較的安全な輸液として、緊急来院時の血管確保などを目的に使用される", "KN3号輸液:健康人の水分電解質の平均1日維持量を目安とした組成であり、カリウムイオンは100mEq/L含む", "5%ブドウ糖液:等張液であるが、ブドウ糖は細胞内で代謝されるため同量の水を投与したことになる"], correctIndex: 3, explanation: "3号液の組成としてKイオン濃度は20mEq/Lである。" },
+          { id: 3, question: "飢餓時の異化の状態についての説明で、誤っているものを選びなさい。", choices: ["肝臓のグリコーゲンが優先的に分解され、グルコースとなって血中に放出されるが、ほぼ1日で枯渇する", "脂肪の分解により生じた遊離脂肪酸は酸化によりエネルギーを産生する", "絶食期間が長いと脂肪酸が余剰となりケトン体を生成、蓄積することでケトアシドーシスになるおそれがある", "初期から体蛋白の分解が最も活発に行われ、筋肉が速やかに減少する"], correctIndex: 3, explanation: "初期のエネルギー源はグリコーゲンや脂肪が中心となるため、体蛋白の急速な分解が第一に起こるわけではない。" },
+          { id: 4, question: "アミノ酸についての説明で、誤っているものを選びなさい。", choices: ["蛋白質の分解が進むと創傷治癒の遅延や免疫能が低下し生体の適応障害を起こす", "除脂肪体重(LBM)が80%以下になると窒素死と呼ばれる生命の危機が生じるといわれる", "アミノ酸がエネルギーとして消費されると4kcal/gの熱量を産生する", "最近では、必須アミノ酸は不可欠アミノ酸、非必須アミノ酸は可欠アミノ酸とも言われる", "アミノ酸とジペプチド・トリペプチドはそれぞれ別経路の輸送系で吸収される"], correctIndex: 1, explanation: "除脂肪体重(LBM)が「70%以下」になると窒素死と呼ばれる生命の危機が生じるといわれる。" },
+          { id: 5, question: "脂質についての説明で、誤っているものを選びなさい。", choices: ["脂質投与の目的は、効率の良いエネルギー供給(9kcal/g)と、必須脂肪酸の供給である", "長鎖脂肪酸トリグリセリド(LCT)の中でリノール酸、リノレン酸は必須脂肪酸である", "必須脂肪酸の補給としては、脂肪として5g/日程度を投与する", "MCTはカイロミクロンにはならず速やかに肝臓に運ばれるためLCTに比べて吸収・代謝が速い", "中鎖脂肪酸はミトコンドリアへの取り込みにカルニチンを必要とせず、直接取り込まれる"], correctIndex: 2, explanation: "必須脂肪酸の補給としては、脂肪として10g/日程度を投与する。" },
+          { id: 6, question: "栄養の評価とプランニングに関する説明で、誤っているものを選びなさい。", choices: ["身体計測による栄養評価指標として、体重変化率やBMIなどがある", "血清アルブミン値(Alb)は栄養不良の他、炎症性疾患、採血時の体位でも変動する", "Rapid Turnover Protein(RTP)にはトランスサイレチン(プレアルブミン)、コリンエステラーゼ、3-メチルヒスチジンがある", "基礎エネルギー消費量の推計としてHarris-Benedictの式がある", "1日の必要水分量は(体重kg) × (30~40mL)と簡易に計算する方法もある"], correctIndex: 2, explanation: "Rapid Turnover Protein (RTP)にはトランスサイレチン(プレアルブミン)、レチノール結合蛋白、トランスフェリンがある。" },
+          { id: 7, question: "末梢静脈栄養における「血管痛・静脈炎の予防と対策」として、誤っているものを選びなさい。", choices: ["高浸透圧の場合、糖濃度を下げる", "できるだけ大きい径のカニューラを使用する。", "できるだけ血流の多い上肢の太い静脈に留置する。", "なるべく中性に近いpHの輸液を選択する。", "なるべく緩徐に投与する。"], correctIndex: 1, explanation: "必要最小径のカニューラを使用する。" },
+          { id: 8, question: "飢餓時のブドウ糖投与による体蛋白の節約効果を見たGambleデータについて、a~cに当てはまる語句を選びなさい。「飢餓状態では、体蛋白の異化により、6日間で約(a)の蛋白質が喪失した。これは筋肉量に換算すると約(b)に相当する。この時ブドウ糖を投与すると蛋白の異化が抑制され、100g/日の投与で蛋白質量 6日間で約(c)となった」", choices: ["a 400g b. 2kg c. 200g", "a. 400g b. 1kg c. 200g", "a. 200g b. 2kg c. 100g", "a. 200g b. 1kg c. 100g", "a 200g b. 1kg c. 50g"], correctIndex: 0, explanation: "飢餓状態では、体蛋白の異化により、1日約70g、6日間で約400gの蛋白質が喪失した。筋肉量に換算すると2kgに相当する。ブドウ糖投与で蛋白の異化が抑制され、100g/日の投与で約200gとなった。" },
+          { id: 9, question: "中心静脈栄養(TPN)に関する説明で、誤っているものを選びなさい。", choices: ["TPNは静脈栄養管理のうち、長期間あるいは水分制限を必要な場合に選択される", "NPC/N比は疾患や病態により異なるが通常150~200程度が蛋白合成の効率が高いとされる", "腎不全ではアミノ酸投与量の制限、体蛋白異化亢進による必要エネルギーの増加から、NPC/N比は30~50程度と低くなる", "TPN施行時のビタミンB1の非投与により、ビルビン酸からアセチルCoAの代謝が阻害され、重篤な乳酸アシドーシスを呈することが知られている", "静脈栄養のビタミン投与量指針として、1975年のAMA処方にくらべ、FDA2000処方ではビタミンB1などが増量、ビタミンK投与量が新たに規定された"], correctIndex: 2, explanation: "腎不全ではアミノ酸投与量の制限、体蛋白異化亢進による必要エネルギーの増加から、NPC/N比は300~500程度と高くなる。" },
+          { id: 10, question: "経腸栄養法に関する説明で、誤っているものを選びなさい。", choices: ["経腸栄養法の利点として、腸管粘膜の萎縮予防が挙げられるが、CRBSIには注意が必要である", "経腸栄養の禁忌としては、腸管の吸収機能が極端に低下している場合や廃絶している場合がある", "経腸栄養法の合併症としては、下痢などの消化器系合併症が最も発生頻度が高い", "ONSとはOral Nutritional Supplementsの略で、経口的栄養補助を意味する", "経管栄養法は、チューブを用いて栄養を投与する方法で、経鼻法と経瘻孔法に分類される"], correctIndex: 0, explanation: "経腸栄養法の利点として、腸管粘膜の萎縮予防が挙げられる。CRBSIは静脈栄養に特異的な感染症であるため、経腸栄養ではおこらない。" },
+          { id: 11, question: "経腸栄養法のうち、経鼻法に関する説明で、誤っているものを選びなさい。", choices: ["経鼻アクセスの特徴として不要時にはいつでも抜去可能であるが、事故抜去(計画外抜去)のリスクも高いことがあげられる", "経鼻チューブの留置では、ほとんど違和感・不快感を感じることがなく、嚥下訓練もしやすい。", "経鼻チューブの留置期間が長くなると鼻や咽頭に炎症を起こしたり、粘膜面のびらん、潰瘍形成の頻度が高くなる", "チューブ挿入時に無理な操作を行うことで消化管穿孔を起こすリスクがある", "気管・気管支内誤挿入は通常咳嗽反射が起こるが、胃内に挿入されたと思われるときもチューブ先端位置を確認することが大切である"], correctIndex: 1, explanation: "経鼻チューブの留置では、ある程度の違和感・不快感が避けられない。嚥下訓練も行いにくい特徴がある。" },
+          { id: 12, question: "経腸栄養法のうち、経瘻孔法に関する説明で、誤っているものを選びなさい。", choices: ["消化管瘻アクセスの特徴として、胃瘻では半固形化栄養製品が投与できることや、嚥下訓練がしやすいことがあげられる", "PEG(経皮内視鏡的胃瘻造設術)は、開腹手術をせずに胃瘻を造設する方法である", "PTEG(経皮経食道胃管挿入術)は、内視鏡を用いず超音波下に造設する頸部食道瘻造設術である", "PEG造設に伴う晩期の合併症としてバンパー埋没症候群がある", "留置中のチューブ閉塞対策としてはアルコール注入法によるチューブ内腔の衛生管理が有効である"], correctIndex: 4, explanation: "チューブ閉塞の対策としては十分なフラッシングと酢水ロックによるチューブ内腔の衛生管理が有効である。" },
+          { id: 13, question: "経腸栄養法に用いる栄養製品に関する説明で、誤っているものを選びなさい。", choices: ["主な窒素源について、成分栄養剤はアミノ酸、消化態栄養剤はアミノ酸やジペプチド・トリペプチド、半消化態栄養剤は蛋白質である", "成分栄養剤は極めて高脂肪・低糖質であり、高脂血症には注意が必要である", "医薬品経腸栄養剤は薬価請求できる一方で、濃厚流動食品は給食費請求となる", "外来や在宅においては濃厚流動食品は全額患者自己負担となる", "OPFの医薬品消化態経腸栄養剤としてはツインラインNFがある"], correctIndex: 1, explanation: "成分栄養剤は極めて低脂肪であり、必須脂肪酸の補給が別途必要となる。" },
+          { id: 14, question: "経腸栄養の「半固形化栄養法」について、誤っているものを選びなさい。", choices: ["胃の機能が正常である場合、半固形栄養を注入したとき、胃の貯留能と排出能を得ることが可能である。", "胃食道逆流や誤嚥性肺炎、下痢、ダンピングなど経腸栄養管理を行う上で問題となる合併症の予防策になり得る。", "胃の機能が不十分な場合など患者状態によって期待する効果が得られず、液体栄養が望ましいケースもある。", "栄養剤リークの対処としては、半固形化よりも液体の方が胃内容物が流出しにくい", "ミキサー食は、粘度調節が必要であるがコストは安い"], correctIndex: 3, explanation: "栄養剤リークの対処として栄養剤の固形化や粘度増強により瘻孔から胃内容物が流出しにくくする方法が有効とされる。" },
+          { id: 15, question: "酸塩基平衡に関する説明で、誤っているものを選びなさい。", choices: ["血液(動脈血)のpHは通常約7.4±0.05である", "代謝性アシドーシスの成因のひとつに、下痢などによる腸管からの重炭酸イオンの喪失があげられる", "メイロン投与時の注意点の1つに、換気不十分では細胞内アシドーシスを生じることがあるため、換気を十分に行いCO2排出を図る。", "アシデーミアでは、pHの低下によりKイオンが血液中から細胞内に移動するため血漿Kイオン濃度が低下する。", "アシデーミアでは、イオン化Ca濃度が増加する"], correctIndex: 3, explanation: "アシデーミアでは、pHの低下によりKイオンが細胞内から血液中に移動するため血漿Kイオン濃度が上昇する。" },
+          { id: 16, question: "リニュートの特徴について、誤っているものを選びなさい。", choices: ["消化態タイプの濃厚流動食品", "カロリー濃度 1kcal/mL", "エネルギー産生栄養素バランスは炭水化物50%、脂質34%、タンパク質16%", "食物繊維を配合", "乳タンパク質は不使用である"], correctIndex: 2, explanation: "リニュートのエネルギー産生栄養素バランスは、タンパク質24%、炭水化物26%、脂質50%である。" },
+          { id: 17, question: "リニュートでイーゲル・イーゲルLCと比べて増量しているもの(100kcalあたり)として、誤っているものを選びなさい。", choices: ["銅", "亜鉛", "コラーゲンペプチド", "ビタミンB1", "リン"], correctIndex: 4, explanation: "リン含有量は3製品すべて同量(82.5mg/100kcal)。ビタミンB1・銅・亜鉛・コラーゲンペプチドは増量している。" },
+          { id: 18, question: "ペプタメンAFと比べた時のリニュートの特徴として、正しいものを選びなさい。", choices: ["より高タンパクである (100kcalあたり)", "カルニチンを配合している", "イヌリンを配合している", "脂質としてMCTの割合がより高い", "ホエイペプチドを配合している"], correctIndex: 1, explanation: "ペプタメンAFはカルニチン無配合。リニュートにはカルニチン40mg/100kcal配合している。" },
+          { id: 19, question: "水溶性食物繊維ではないものを選びなさい。", choices: ["セルロース", "グアーガム", "フルクトオリゴ糖", "イヌリン", "アルギン酸"], correctIndex: 0, explanation: "セルロースは不溶性食物繊維である。" },
+          { id: 20, question: "イーゲルLCの特徴として、誤っているものを選びなさい。", choices: ["糖質量を減らし (Low-Carbohydrate)、脂質代謝に必要なL-カルニチン (L-carnitine)を配合したことで、LCと名付けている", "0.8kcal/mL、浸透圧340mOsm/Lである", "200kcal, 300kcal、400kcalと3規格を揃えている", "DHAとEPAを配合している", "タンパク質は4.0g/100kcal配合している"], correctIndex: 3, explanation: "ハイネックスシリーズで、DHAとEPAを配合しているのはリニュートのみである。" },
+          { id: 21, question: "他社製品の特徴について正しいものを選びなさい", choices: ["REF-P1はペクチンを含む粘度調整食品で、使用方法は、栄養剤と同時に投与する", "マーメッドワンは消化態の粘度可変型流動食である", "ペプタメンシリーズはすべて1.5kcal/mLの高濃度の流動食である", "乳酸菌配合の流動食として、ペプチーノ、ラクフィアがある", "グルセルナREXは糖質制限栄養製品で、脂質のエネルギー比率を50%にしている"], correctIndex: 0, explanation: "マーメッドワンは半消化態。ペプタメンインテンスは1kcal/mL。ペプチーノは乳酸菌を含まない。" },
+          { id: 22, question: "ハイネックスゼリーの特徴について、誤っているものを選びなさい。", choices: ["900~1500kcalを標準的な1日摂取量として、製剤設計がされている", "粘度は約6,000mPa・s (B型粘度計・12回転/分・20℃)である", "寒天で固めているため、付着性が低く、ベタつきにくい物性である", "脂肪酸 n-3:n-6の比率は1:3である。", "アレルギー物質(28品目中)として、乳成分・大豆・ゼラチンを含む"], correctIndex: 1, explanation: "粘度は約8,700mPa's。6000は旧ハイネゼリーの粘度である。" },
+          { id: 23, question: "ハイネックスゼリーとイノソリッドの共通の特徴として、誤っているものを選びなさい。", choices: ["1袋 300kcal/300gである", "カルニチン、コリンを配合している", "食物繊維としてイヌリンを配合している", "消化吸収に優れたMCTを配合している", "900kcalの摂取で、1日に必要なビタミン・微量元素をほぼ充足できる"], correctIndex: 1, explanation: "カルニチンは2製品とも配合しているが、コリンはイノソリッドのみ配合している。" },
+          { id: 24, question: "ハイネックスゼリー(水分量76%)で、エネルギー量1200kcal・水分量1500mLで管理したい場合、追加水はどのくらい必要か?", choices: ["388mL", "588mL", "740mL", "840mL", "976mL"], correctIndex: 1, explanation: "1200g x 0.76 = 912mL。 1500 - 912 = 588mL。" },
+          { id: 25, question: "ラコールNF半固形剤1バッグから、イノソリッド1バッグに投与を切り替えた際に、投与量が同等となる成分を選びなさい。", choices: ["食塩相当量", "糖質量", "たんぱく質量", "脂肪量", "水分量"], correctIndex: 4, explanation: "ラコール半固形剤とイノソリッドの水分含有率は76%で同じ水分量である。" },
+          { id: 26, question: "イノソリッドの説明として、誤っているものを選びなさい", choices: ["イノラスと単位あたり (g・mLあたり)の熱量は同じである。", "日本人の食事摂取基準(2020年版)に基づいた処方設計であり、エネルギー産生栄養素バランスは2025年版の目標値にも合致する。", "処方設計熱量は900kcal/日、成人標準量は900~1500kcal/日である。", "1500kcalを投与したとき、日本人の食事摂取基準(2025年版)の耐容上限量(18歳以上)を超える成分はない。", "n-3系脂肪酸の主な供給源として、シソ油と魚油を配合している。"], correctIndex: 0, explanation: "イノソリッドは1.0kcal/g、イノラス液剤は1.6kcal/mLである。" },
+          { id: 27, question: "在宅半固形栄養経管栄養法指導管理料について、誤っているものを選びなさい。", choices: ["算定できる点数は、2500点/月である。", "本管理料を算定している入院中以外の患者に対して、栄養管セットを使用した場合、在宅経管栄養法用栄養管セット加算2000点/月を算定できる。", "あらかじめ調整された半固形状のものを用いた場合のみ算定でき、胃内で形状が変わるタイプのものは対象とならない。", "最初に算定した日から起算して3年を限度として算定できる。", "要件を満たしていれば、半固形状の濃厚流動食(医薬品ではない)を使用して算定できる。"], correctIndex: 3, explanation: "最初に算定した日から起算して「1年」が限度である。" },
+          { id: 28, question: "キドバレン輸液の禁忌として、誤っているものを選びなさい。", choices: ["高乳酸血症の患者", "高ナトリウム血症の患者", "高リン血症の患者", "高アンモニア血症の患者", "肝性昏睡又は肝性昏睡のおそれのある患者"], correctIndex: 2, explanation: "キドバレン輸液にはリンが配合されていないため禁忌ではない。" },
+          { id: 29, question: "慢性腎不全患者に対するTPN処方のインターネット調査結果によると、CKD食事療法基準を目安として個別の電解質量を考慮した結果、全体的なカロリー投与量を少なく設定しているが、実際には目標とするTPN管理が実施できていない理由として最も多かったのが( )であった。", choices: ["既承認医薬品の組合せではCKD食事療法基準を目安に処方設計することが困難である。(混合調製作業を含む)", "重度の糖尿病患者が多く、糖分からのカロリー量を少なく設定している。", "心血管系の合併症等で投与液量が制限されることが多く、CKD食事療法基準よりも少ないカロリー、アミノ酸量を設定している。", "その他の理由"], correctIndex: 0, explanation: "既承認医薬品の組合せでは...困難である が全体の59.2%で最も多かった。" },
+          { id: 30, question: "体重50kgの患者にキドパレン輸液1バッグを投与した場合、エネルギーは30kcal/kg/日、蛋白質量(アミノ酸量)は約( )g/kg/日となる。", choices: ["0.46", "0.56", "0.66", "0.76", "0.86"], correctIndex: 2, explanation: "CKD食事療法基準の保存期CKD患者で推奨される、0.6~1.0g/kg標準体重/日を充足できる処方設計となる(0.66g)。" },
+          { id: 31, question: "キドバレン輸液の組成について、正しいものを選びなさい。", choices: ["バッグに含まれる Na+は35mEqである。", "1バッグに含まれるK+120mEqである。", "FDA2000処方に準拠したビタミン、微量元素を配合している。", "必須アミノ酸/非必須アミノ酸比は3.4で、ArgやGlyを配合している", "分岐鎖アミノ酸含有率は45.8w/w%で、キドミン輸液と同じである。"], correctIndex: 4, explanation: "①150mEq ②カリウムは配合していない ③微量元素は配合していない ④Glyは配合していない。" },
+          { id: 32, question: "エネフリード輸液1バッグ (550mL)とビーフリード輸液1バッグ (500mL)の成分について、誤っているものを選びなさい。", choices: ["ブドウ糖量が同じである。", "分岐鎖アミノ酸含有率が同じである。", "ビタミンB1量が同じである。", "ナトリウム量が同じである", "亜鉛量が同じである"], correctIndex: 2, explanation: "ビーフリードのビタミンB1量はAMA処方、エネフリードのビタミンはFDA2000処方に準拠しているため異なる。" },
+          { id: 33, question: "エネフリード輸液投与時のライン管理について誤っているものを選びなさい。", choices: ["可能な限り、側注口のない輸液ラインを選択する。", "可能な限り、除菌用ファイナルフィルターを使用する。", "可能な限り、閉鎖式輸液ラインを使用する。", "輸液ライン側管から他の薬剤を投与しない", "エネフリード投与後に、注射剤の混合調製がない輸液製剤を投与する際、輸液ラインはエネフリード投与開始後24時間毎に交換する。"], correctIndex: 1, explanation: "除菌用ファイナルフィルターは使用できない。(脂肪粒子が目詰まりする)" },
+          { id: 34, question: "ビーフリード輸液について、誤っているものを選びなさい。", choices: ["2000mLの投与で60gのアミノ酸を補給できる。", "重篤な腎障害のある患者(透析又は血液ろ過を実施している患者)は禁忌とはならない。", "隔壁を開通せずに下室のみ投与した際、高血糖を起こすリスクがある。", "うっ血性心不全のある患者に対して禁忌となっているのは、十分な栄養量を補給する場合に、過剰な水分負荷がかかるためである。", "隔壁未開通の状態で上室が着色していた場合、メイラード反応によるものと推測できる。"], correctIndex: 4, explanation: "上室のみで着色がある場合に考えられるのは、アミノ酸の酸化。メイラード反応は隔壁開通後ブドウ糖とアミノ酸が混合されて発生する。" },
+          { id: 35, question: "アクトリーンについて、誤っているものを選びなさい", choices: ["ハイライト カテ(ネラトン)には、径の大きさが違う5種類があり、ハイライトカテ(チーマン)には、径の大きさが違う4種類がある。", "カテーテルは植物由来のグリセリンと蒸留水を使用したゲル状の潤滑剤でコーティングされている。", "重大な有害事象として、尿路感染、膀胱・尿道損傷、出血、尿道炎症がある。", "1箱(30本入り)に1つ、携帯ポーチが付いている。", "特殊カテーテル加算の「2.間歌導尿用ディスポーザブルカテーテルの親水性コーティングを有するもの」に該当し、400点が算定できる。"], correctIndex: 4, explanation: "400点(5400点)算定できるのは再利用型カテーテル。アクトリーンはディスポーザブルである。" },
+          { id: 36, question: "アクトリーンについて、誤っているものを選びなさい", choices: ["アクトリーン セットは逆流防止機構を備えた採尿バッグと一体化している。", "ミニのカテーテル長は全て90mmである。", "ハイライト セットの採尿バッグ容量は700mLである", "男性用はコンパクトに折りたたんで持ち運ぶことができ、折り曲げは24時間まで可能である。", "チーマンタイプを選択する場合として、尿道狭窄などにより挿入困難な患者などがある。"], correctIndex: 2, explanation: "ハイライト セットの採尿バッグ容量は1000mLである。" },
+          { id: 37, question: "タムガイドについて、生体透過光(BT光)の説明と体表で見えるイメージの記載として、誤っているものを選びなさい。", choices: ["柔らかい組織は透過するが、骨や軟骨など硬い組織は透過しない波長域の光である。", "下咽頭通過時は体表に近いため光が見えることがある。", "胃に入った直後に腹部で光が見えることが多い。", "胃に入った直後は、通常、胃底部に向かう。", "胃底部の壁に当たった場合、肋間で光が見えることがある"], correctIndex: 2, explanation: "胃に入った直後は、通常、体表で光は確認できない。" },
+          { id: 38, question: "タムガイドで行った102例の臨床データおよび考察について、誤っているものを選びなさい。", choices: ["BT光を確認した87症例全てで、X線画像突合により胃内留置が確認された", "気管内に留置された1症例において、胸部で光が確認された。", "X線検査で胃内に位置していると診断されたとき、必ずしもBT光が確認できたわけではなかった。", "BT光が検出できなかった場合、X線検査を実施することは必要である。", "肥満患者(BMI>27.5. N=9)の感度は患者群全体と比べ低く算出されたが患者数が少ないため統計的有意性は検定できなかった。"], correctIndex: 1, explanation: "気管内(1例)、食道又は食道胃接合部(3例)に留置された症例については光は確認されなかった。" },
+          { id: 39, question: "タムガイドの使用方法、注意事項等について誤っているものを選びなさい。", choices: ["タムガイドの電源ボタンを押すたびに、点滅→点灯→消灯と変わる", "光源装置消灯後、または、ファイバーを外し30分以上経過すると、使用済みファイバーと認識される。", "ファイバーは感染予防の観点から「再減菌禁止・再使用禁止」としている。", "光源装置は市販の表面消毒剤または水で薄めた中性洗剤を含ませた布等で表面を清掃する。", "ファイバーを経鼻胃管から抜去する際、抵抗があり抜去出来ない場合には経鼻胃管とともに抜去する。"], correctIndex: 1, explanation: "30分ではなく15分以上経過すると使用済みと認識される。" },
+          { id: 40, question: "タムガイドに関する診療報酬点数 J034-2 経鼻栄養 180点について、誤っているものを選びなさい。", choices: ["DPC(包括) 病棟では算定不可", "外来で算定可", "一般病棟(非DPC病院)で算定可", "回リハ、地域包括ケア病棟で算定可", "在宅で算定可"], correctIndex: 3, explanation: "回リハ、地域包括ケア病棟では算定不可である。" },
+          { id: 41, question: "脳卒中と栄養療法に関する記述で誤っているものを選びなさい。", choices: ["脳卒中発症時のサルコペニアの有病率は15.8%であるという研究報告がある。", "脳卒中急性期では多くの症例で、早期の栄養療法の導入が遅れがちと言われている", "脳卒中では糖尿病の既往がない症例でも耐糖能異常を併発している", "脳卒中治療ガイドライン2021では48時間以内の早期経腸栄養が推奨されている"], correctIndex: 3, explanation: "脳卒中発症後7日以上にわたって十分な経口摂取が困難な患者では経腸栄養等を行うことは妥当であるという推奨であり、時間に関する詳細な記載はない。" },
+          { id: 42, question: "脳卒中に関する記述で誤っているものを選びなさい", choices: ["低ナトリウム血症は脳卒中における最も一般的な電解質異常であり脳卒中の死亡率と機能的転帰に悪影響を及ぼすとされている", "中国人を対象とした研究で、重症脳卒中初期の高カロリー経腸栄養(推定必要カロリーの90~110%)は死亡率の上昇と関連している可能性があることが示された。", "広島大学からの報告によると、血清中のF. nucleatumに対する抗体の検出は、脳卒中後の予後不良と独立して関連していることが示された。", "脳卒中急性期には頭蓋内圧亢進やめまい症状などで嘔気・嘔吐を生じやすいことも加わり、発症直後の急性期には経口摂取、経腸投与は敬遠されがちと言われている。"], correctIndex: 1, explanation: "重症脳卒中初期の「低カロリー経腸栄養」が死亡率の上昇と関連している可能性があることが示された。" },
+          { id: 43, question: "脳卒中における経腸栄養管理と口腔ケアに関する記述で誤っているものを選びなさい", choices: ["脳卒中ではリハビリを積極的に行うため、リハ時間確保のために経腸栄養の投与時間を短時間に留めたいというニーズがある。", "「脳卒中治療ガイドライン2021」によると、急性期脳卒中患者の口腔ケアは、誤嚥性肺炎のリスクを低下させる点から勧められる", "「柏スタディ」において、正常群とオーラルフレイル群とを比較したところ、オーラルフレイル群で身体的フレイル、サルコペニア、要介護認定、総死亡リスクが2倍以上高まるという結果が示された。", "くも膜下出血における脳血管攣縮の予防でクラゾセンタンという薬剤が普及している。この薬剤の影響で、脱水の懸念があるので、水分のインプットは多めにコントロールする事が求められている"], correctIndex: 3, explanation: "体液貯留に留意し水分バランスを+500ml以内に抑える必要がある。" },
+          { id: 44, question: "誤嚥性肺炎と口腔ケアに関する記述で誤っているものを選びなさい", choices: ["口腔内のバイオフィルムが気管に侵入することで誤嚥性肺炎となることがあり、経腸栄養中にも口腔ケアをすることの意義があるといえる。", "口腔ケアの効果として、全身感染症である誤嚥性肺炎の予防にも寄与する可能性が示されている。", "寺本らの報告によると、入院肺炎患者における誤嚥性肺炎の比率は高齢者において高くなる傾向があり、70歳~79歳でその比率はピークとなることが示されている。", "米山らの報告において、特別養護老人ホーム入所者に対する口腔ケア介入が2年間の発熱発症率や肺炎発症率を低減することを示した。"], correctIndex: 2, explanation: "年齢が高くなればなるほど肺炎患者における誤嚥性肺炎の比率は高くなり、90歳以上でその比率は最も高くなることが示された。" },
+          { id: 45, question: "頭頸部癌の栄養療法に関する記述で誤っているものを選びなさい", choices: ["頭頸部癌治療として行われる放射線療法による摂食関連症状の一つとして口腔内乾燥があげられる。", "鈴木基之らの「頭頸部癌化学放射線療法に対する栄養支持療法とその効果に関する検討」は単群の介入試験として報告されている。", "頭頸部癌治療におけるキードラッグであるシスプラチンやセツキシマブ投与時には低マグネシウム血症に注意する必要がある。", "日本頭頸部癌学会のガイドラインにおいて、頭頸部癌患者の体重を10%以上低下させないために胃造設が推奨される旨が記載されている。"], correctIndex: 3, explanation: "栄養管理の最低限の目標として体重を10%以上低下させないことが記されているが必ずしも胃瘻造設を推奨しているわけではない。" },
+          { id: 46, question: "がん悪液質に関する記述で誤っているものを選びなさい。", choices: ["がん悪液質と診断された患者には栄養療法、運動療法、薬物療法、心理サポートなどを組み合わせたマルチモーダル・ケアの実施が提唱されている。", "がん診療連携拠点病院に勤める医療従事者を対象にしたアンケート調査の結果、がん悪液質の国際的な定義の認知率は50%を下回っていた。", "がん悪液質の有病率を調査した研究では、膵癌患者のがん悪液質の有病率が最も高い事が示されている。", "がん患者を対象にしたアンケート調査によると、がん悪液質の悪影響が明らかになってから専門知識を持つ医療スタッフによる栄養サポートを望んでいる事がわかった。"], correctIndex: 3, explanation: "がんと診断された早い段階から専門知識を持つ医療スタッフによる栄養サポートを望んでいる。" },
+          { id: 47, question: "重症患者の静脈栄養、リアルワールドデータに関する記述で誤っているものを選びなさい", choices: ["観察研究に位置づけられるリアルワールドデータ研究は近年その価値が見直されており、一様にエビデンスレベルが低いとは言い切れない。", "重症患者に対する早期の栄養療法として許容される少なめの栄養投与を意味する「permissive underfeeding」が一般的になっている。", "Yasudaらの報告から、本邦ICUにおいて入室4-7日目の平均アミノ酸処方量が1.2g/kg/day以上である事と院内死亡率改善との関連が示された。", "Yasudaらの報告から、2016年の日本版重症患者栄養療法ガイドラインをきっかけとして静脈栄養によるエネルギー投与量が減少傾向にあることが推定された。"], correctIndex: 2, explanation: "1.2g/kgが間違い(正しくは0.6g/kg)。リアルワールドデータによれば、1.2g/kgを越えて処方を行っている症例が少なく、高たん白投与群を作る事が出来なかった。" },
+          { id: 48, question: "オートファジー、mTORに関する記述で誤っているものを選びなさい", choices: ["オートファジーには恒常的(常に低い活性で起動)と誘導的(一過性に著しく活性)があり、細胞内成分を分解することで不要物を除去すると同時に、分解産物(アミノ酸、グルコース、脂肪酸、核酸等)を栄養素として細胞に提供する。", "mTORC1活性化とリン酸輸送体発現亢進は関連しており、集中治療の急性期には血清リン値のモニタリングが重要である。", "加齢による筋肉量の減少は、慢性炎症によって生成される炎症性サイトカインによってmTORC1の活性が抑制されるのが原因である。", "mTORC1はインスリン、アミノ酸(特にイソロイシン)の刺激によるリン酸化により活性化され筋肉細胞の増殖やタンパク質合成が始まる。"], correctIndex: 3, explanation: "インスリン、アミノ酸(特にイソロイシンではなくロイシン)の刺激によるリン酸化により活性化される。" },
+          { id: 49, question: "小児・重心患者の栄養管理に関する記述で誤っているものを選びなさい。", choices: ["新生児、乳児の栄養補給の第一選択は母乳であり、幼児期ごろからミキサー食や経腸栄養剤が利用される。", "カルニチン欠乏の一因に、バルプロ酸ナトリウムやピボキシル基含有抗生物質などの薬剤性や、骨格筋量が少ない貯蔵不足などがある。", "栄養管理上、非アテトーゼ型は痩せやすいため投与量不足に注意し、アテトーゼ型では太りやすいため過剰投与に注意する。", "小児では、たん白合成の面からNPC/Nは200~400を目標にする"], correctIndex: 2, explanation: "アテトーゼ型と非アテトーゼ型の記述が逆である。(アテトーゼ型が痩せやすく、非アテトーゼ型が太りやすい)" },
+          { id: 50, question: "半固形栄養に関する記述で誤っているものを選びなさい", choices: ["在宅半固形栄養経管栄養法指導管理料は、2,500点/月である。胃造設術後1年以内に当該療法を開始し、最初に算定した日から起算して1年を限度として算定する。", "胃の機能には、噴門で胃食道逆流を防ぐ働きがある。", "合田文則先生が提唱した胃食道逆流予防に必要な粘度である20,000mPa・sは、B型粘度計12回転/分での値である。", "ダンピング症候群は、体液(細胞外液)が小腸に移行し、循環血液量が低下することを起因とする「早期ダンピング症候群」とインスリンが過剰に分泌され低血糖が起こることを起因とする「後期ダンピング症候群」に分けられる。"], correctIndex: 2, explanation: "合田文則先生が提唱した20,000mPa・sは、B型粘度計6回転/分での値である。" },
+          { id: 51, question: "CKD・透析に関する記述で誤っているものを選びなさい", choices: ["CKDの診断がされても、比較的GFRが保たれた早期のステージ(1・2)では、たんぱく質は「過剰な制限をしない」ことが推奨されている。", "CKDの栄養障害をPEW (protein energy wasting)と呼び、CKDの病態を基盤として、栄養不良・尿毒素の蓄積・代謝亢進・炎症などがある。", "「腎臓リハビリテーション」とは、単なる運動療法を目的とするのではなく、CKD患者における運動療法、食事療法と水分管理、薬物療法、教育、精神・心理的サポートなども行う、長期にわたる包括的なプログラムのことをいう。", "透析患者の死亡率との関係をみたところ、筋力よりも筋肉量の方が、強い関連が見られ、筋肉量を保つことが重要と考えられる。"], correctIndex: 3, explanation: "筋力および筋肉量と死亡率との関連をみたところ、低筋肉量では有意差はなく、低筋力のみが死亡リスクの増加と関連した。" },
+          { id: 52, question: "CKD患者における輸液栄養管理に関する記述で誤っているものを選びなさい", choices: ["ESPENの示す栄養サポートのアルゴリズムにおいて、低栄養のCKD (透析)患者は食事療法やONSが優先される。", "300名の医師を対象にした、慢性腎不全患者に対するTPN処方調査で、TPN処方を組む際に、総合ビタミン剤は約90%処方されていたが、微量元素製剤も一緒に処方するケースは約65%であった。", "GFRが60mL/分/1.73m2未満の状態や蛋白尿など明らかな腎障害が1か月以上続くと、CKDと診断される。", "慢性腎不全患者に対してTPNで栄養管理をする場合、水分量制限があるため、十分なエネルギーやアミノ酸を投与出来ないケースがある。"], correctIndex: 2, explanation: "明らかな腎障害が「1か月」ではなく「3か月」以上続くとCKDと診断される。" },
+          { id: 53, question: "透析患者の栄養に関する記述で誤っているものを選びなさい", choices: ["透析患者のたんぱく質摂取量と死亡リスクとの関連を見ると、たんぱく質摂取量が少ないほど死亡リスクが上昇するが、1.3g/kg/日以上の場合も、死亡リスクが上昇する。", "透析中のONSの有用性が示されているが、他社も含め、医薬品の経腸栄養剤は、全て「高度の腎障害」が禁忌になる為、使用できない。", "NRI-JHは、日本人のデータ(日本透析医学会の統計調査データ)を用いて作られたので、日本では、透析患者の栄養評価としてNRI-JHが使用されている", "地域在住の日本人高齢者では、サルコペニア合併率は男性8.3%、女性7.7%に対し、透析患者におけるサルコペニア合併率は27.4~68.0%と非常に高くなっている。"], correctIndex: 1, explanation: "腎機能に関連する禁忌は製剤ごとに異なる。エンシュア等は禁忌の記載なし、エンシュアHは腎不全末期が禁忌等である。" },
+          { id: 54, question: "心不全に関する記述で誤っているものを選びなさい", choices: ["心不全患者は、入院と退院を繰り返し終末期に向かう事が特徴的で、2020年のコホート研究では300日程度で半数ほどの患者が再入院する事が示唆された。", "心不全治療における薬物療法はFantastic Fourと呼ばれる4つの薬剤を適切に使用する事が重視されるが、高齢患者では利益・不利益のバランスが不利益に傾く可能性も議論されるようになっている", "Uemuraらの2024年の報告では、急性期心不全の治療のための入院中に口腔機能問題や栄養不良を有する患者では、在院死が有意に多いことが示された。", "Rozentryt Pらの報告によると、慢性心不全患者(悪液質あり)23例に、ONSとして1日600kcalを6週間投与したところ、体重・脂肪組織・血中コレステロールの増加、血中TNF-α値、QOLの改善がみられた。"], correctIndex: 2, explanation: "在院死の増加ではなく、入院期間中のバーセルインデックス(ADL)の低下が示された。" },
+          { id: 55, question: "心臓リハビリテーションに関する記述で誤っているものを選びなさい。", choices: ["運動療法だけではなく、患者と家族への教育、カウンセリング、栄養・食事指導、服薬指導、生活指導、禁煙指導、ストレスコントロール、職業復帰訓練などを含めた患者支援を行うことを包括的心臓リハビリテーションという", "LVEF(左室駆出率)が40%未満に低下した心不全をHFrEFといい、LVEFが50%以上保たれた心不全を HFpEFという。", "北里大学からの報告によると、心不全による入院患者約5万人のうち、入院中リハと外来リハともに行っているのは、33%程度であった。", "慢性心不全の入院患者に対する個別栄養サポート (EFFORT study 二次解析)では、個別の栄養介入により入院30日以内において全体の心不全患者の生存率が有意に改善した。"], correctIndex: 2, explanation: "入院中リハと外来リハともに行っているのは「33%」ではなく「7%」程度であった。" },
+          { id: 56, question: "ハイネックスイーゲル(ハイネイーゲル)に関連する記述で誤っているものを選びなさい", choices: ["食道癌術後の経腸栄養管理において、下痢発生群は非発生群と比べて生存期間中央値が短く、予後悪化を招く可能性がある事が示されている。", "健康診断参加者を対象にした研究で、PPIの使用が血清プレアルブミン値の低下と関連していることが示されている。この要因として、PPIによる胃酸分泌の抑制がタンパク質の吸収障害を招いているのではないか?と考察されている。", "2019年に虎ノ門病院から、食道癌術後の腸瘻管理でイーゲルの有用性を示唆する研究論文が投稿されている。", "慢性期病院にてTPNだけの管理をする場合、60日を超えると処置区分が変更され、病院としては減収となる。"], correctIndex: 3, explanation: "「60日」ではなく「30日」を超えると処置区分が変更される。" },
+          { id: 57, question: "食物繊維に関する記述で誤っているものを選びなさい", choices: ["グアーガム分解物とペクチンを含有した濃厚流動食品を比較した高橋先生の報告では、両群間で短鎖脂肪酸の産生量も腸内細菌叢の悪玉菌減少率も有意差はなく、食物繊維として同等の効果が期待されると報告されている。", "ハイネックスシリーズに配合されているペクチンは、超低メトキシアミド化ペクチン(VLMA)という一般の食品に広く使われているペクチンと違って特殊なペクチンであり、他のペクチンより大腸で発酵分解率が高く短鎖脂肪酸産生効果が高いと考えられる。", "食物繊維の発酵分解率は食物繊維の種類によって差があり、発酵分解率の高い食物繊維にはグアーガム分解物、ペクチン、イヌリンなどが代表的なものとしてあげられる。", "日本人の食事摂取基準2020年版では食物繊維の摂取目標量は男性21g以上、女性18g以上であるが、この目標量は全年代で不足している。"], correctIndex: 1, explanation: "VLMAは他のペクチンより発酵分解率は低く、ラットを使った試験では50%程度が発酵分解すると考えられる。" },
+          { id: 58, question: "褥瘡と栄養療法に関する記述で誤っているものを選びなさい", choices: ["コラーゲンペプチドに含有されているアミノ酸のヒドロキシプロリンが、直接、コラーゲン合成の原材料として利用されることにより、褥瘡患者の創傷治癒が期待される", "褥瘡予防・管理ガイドライン第5版(2022年)では褥瘡の治療に高エネルギー・高タンパク質の栄養補給を提案するとされており、エネルギー量は30kcal/kg/日以上、タンパク量は1.0g/kg/日以上が必要と記載されている。", "褥瘡予防・管理ガイドライン第5版(2022年)では褥瘡患者に対して亜鉛、アスコルビン酸、アルギニン、L-カルノシン、n-3系脂肪酸、コラーゲン加水分解物、β-ヒドロキシβ-メチル酪酸、α-ケトグルタル酸オルニチンなど特定栄養素については疾患を考慮したうえで補給してもよいと記載がある。", "褥瘡予防・管理ガイドライン第5版(2022年)では栄養に関するCQ(クリニカルクエスチョン)が全体で1つのみである。"], correctIndex: 0, explanation: "直接原材料として利用されるのではなく、ヒドロキシプロリンを含むジペプチドが線維芽細胞を刺激することによりコラーゲン合成が活発になる。" },
+          { id: 59, question: "パーキンソン病と栄養療法に関する記述で誤っているものを選びなさい", choices: ["パーキンソン病 (PD)では、病期の進行とともに、約8割の患者さんで嚥下障害を合併するといわれている。", "パーキンソン病の自律神経障害には、便秘などの消化器症状のほか、蓄尿障害、起立性低血圧、発汗障害、流涎、体重減少などがある。", "パーキンソン病とは、大脳の下にある中脳の黒質と呼ばれる部位に原因不明の変性が生じ、ドパミンと呼ばれる神経伝達物質の分泌が低下する疾患である。", "エネフリード輸液やエルネオバNF輸液の添付文書には、レボドパの有効性を減じるおそれがある旨の記載があるが、含有しているピリドキシンの量は少量のため、問題はない。"], correctIndex: 3, explanation: "少量であれば問題ないというデータはない。有効血漿濃度を下回る可能性が高くなる。" },
+          { id: 60, question: "排尿ケアに関連する記述で誤っているものを選びなさい。", choices: ["Foleyがバルーン付きのカテーテルを開発した", "「病院感染対策ガイドライン2018年版(2020年3月増補版)」によると尿路感染症は医療関連感染全体の36%を占める。", "CICの目的に膀胱の過伸展の予防、腎機能障害の予防、尿路感染症の予防、活動性の向上などがある。", "尿道留置カテーテルを抜去して自然排尿があったとしても膀胱内に尿が残っていれば尿路感染症などの有害事象を引き起こす恐れがあるため残尿測定を行う。"], correctIndex: 1, explanation: "以前は36%でしたが現在は10%です(2018年版【2020年3月増補版】)。" }
+        ]
+      },
+      advance: {
+        title: "製品知識：Advance編 (40問)",
+        desc: "プロモーションコード、医療機関等への資金提供、寄附などのルールに関する確認テストです。",
+        countLabel: "全40問",
+        questions: [
+          { id: 61, question: "公認資材「キドパレン輸液を使用する時の注意点」の内容について、誤っているものを選びなさい。", choices: ["低カリウム血症に伴ってみられる症状としてeGFRの高値、乏尿が知られている。", "リフィーディング症候群は慢性的な高度の低栄養患者に急速な栄養補給を行うことで発症するリスクがある。", "リフィーディング症候群ハイリスク患者には栄養開始前、開始後10日間はビタミンB群や微量元素を補給する。", "キドバレン輸液と併用注意の薬剤としてジギタリス製剤(ジゴキシン等)、パーキンソン病治療薬(レボドパ)、ワルファリンがあげられる。"], correctIndex: 0, explanation: "eGFRの低値、頻尿が低カリウム血症に伴う症状としてみとめられる。" },
+          { id: 62, question: "公認スライド「PPN施行時の衛生管理」の内容について、正しいものを選びなさい。", choices: ["Candida albicans の輸液中繁殖変化をみた報告では、4日間の観察で、アミノ酸加糖電解質液に比べて、生理食塩液での増殖が顕著だった。", "Bacillus cereus の輸液中発育量変化をみた報告では、48時間時点において、TPN輸液、維持液などと比べて、アミノ酸加糖電解質液での発育量が最も著しい増殖を認めた。", "環境検査の結果から、タオルケットや寝間着に比べて、ベッド柵や洗濯機でBacillus cereus のコロニー数が多く検出されており、環境衛生への配慮が必要とされている。"], correctIndex: 1, explanation: "アミノ酸加糖電解質液中での増殖がより顕著であった。Bacillus cereusはタオルケットや寝間着におけるコロニー検出が多かった。" },
+          { id: 63, question: "公認スライド「リアルワールドデータ研究からみるアミノ酸処方量と予後の関連」の内容について、誤っているものを選びなさい。", choices: ["蛋白質の構成単位であるアミノ酸は筋肉量の維持や免疫機能に対して重要な役割を担っている。", "内科系静脈栄養患者を対象とした臨床転機に対するアミノ酸の容量依存効果をみた試験の主要評価項目は院内死亡であった。", "内科系静脈栄養患者を対象とした臨床転機に対するアミノ酸の容量依存効果をみた試験で、絶食開始後4~10日目の経静脈的平均アミノ酸処方量の減少と院内死亡の増加との関連が認められた。", "腎不全用アミノ酸注射液のアミノ酸濃度は約9g/100mLである。"], correctIndex: 3, explanation: "腎不全用アミノ酸注射液のアミノ酸濃度は5.9~7.2g/100mLである。" },
+          { id: 64, question: "公認資材「腎不全患者の急性疾患治療中に一律のタンパク制限をしていませんか?」の内容について、誤っているものを選びなさい。", choices: ["血液透析1回あたりのアミノ酸漏出量は8~12g程度といった報告(ESPEN)がある。", "慢性腎臓病に対する食事療法基準2014年版において、ステージ5D血液透析(週3回)患者に対して30~35kcal/kgBW/日のエネルギー、0.9~1.2g/kgBW/日のタンパク質投与が推奨されている。", "静脈経腸栄養ガイドライン第3版において、血液透析及びCAPDの患者では、20kcal/kg/日、タンパク質として0.8g/kg/日を投与する(BII)としている。", "2021年の急性・慢性腎不全に関するESPENガイドラインにおいて、急性/重症疾患を伴わないCKDの入院患者に0.6~0.8g/kg/日のタンパク質摂取量を処方してもよい、としている。"], correctIndex: 2, explanation: "静脈経腸栄養ガイドライン第3版において、血液透析患者で1.0~1.2g/kg/日、腹膜透析患者で1.1~1.3g/kg/日を投与する、としている。" },
+          { id: 65, question: "公認スライド「妊娠悪阻と輸液・栄養管理」の内容について、誤っているものを選びなさい。", choices: ["「妊娠中の悪心・嘔吐」は妊娠初期の半数以上に認められる", "産婦人科学会診療ガイドライン 2023年版において、「妊娠悪阻では、妊娠による生理変化と嘔吐によって低K血症に陥りやすいことに留意する」といった記載がある。", "妊娠中の「維持」に一日当たり必要なビタミン量について、ビタミンB1は1.4mgと示されている。", "妊婦の悪心嘔吐時の栄養として、高脂質の食事や栄養剤は気持ち悪さを軽減する可能性があることが知られている。", "2022年にエコチル調査のデータを解析した研究報告で、妊娠第1三半期に妊婦の体重が減少すればするほど、児の出生体重が軽くなることが報告された。"], correctIndex: 3, explanation: "高脂質の食事や栄養剤は気持ち悪さを助長する可能性があることが知られている。" },
+          { id: 66, question: "公認スライド「適正な静脈栄養管理における新潮流」の内容について、正しいものを選びなさい。", choices: ["静脈経腸栄養ガイドライン第3版において、「経腸栄養が不可能な場合や、経腸栄養のみでは必要な栄養量を投与できない場合には、静脈栄養の適応となる。」旨の記載がある。", "日本VADコンソーシアムの輸液カテーテル管理の実践基準において、「輸液治療の必要がある患者の輸液治療期間が3か月程度であればPVCを用いる」旨の記載がある。", "PICCは末梢静脈カテーテルの一つである。", "末梢静脈カテーテル留置の際には配合変化や細菌汚染のリスク回避の必要はない。"], correctIndex: 0, explanation: "侵襲性が低い場合の1週間未満の輸液治療が必要な場合にPVCを用いるとしている。PICCは中心静脈カテーテル。末梢静脈カテーテル留置の際にもリスク回避を考慮する。" },
+          { id: 67, question: "公認スライド「誤嚥性肺炎における輸液栄養ケアの再考」の内容について、誤っているものを選びなさい。", choices: ["令和2年(2020年)人口動態統計において誤嚥性肺炎は6位の死因であった。", "誤嚥性肺炎患者における経口摂取意欲群と一時的な禁食群を比較した観察研究の結果から、入院後7日までのエネルギー、窒素摂取量は経口摂取意欲群と一時的禁食群で同等であったものの、一時的禁食群で治癒期間の延長が認められた。", "日本における誤嚥性肺炎患者の栄養管理の現状を確認したリアルワールドデータ解析では、入院7日目までに経口摂取を受けた患者は65.1%であることが示された。", "日本における誤嚥性肺炎患者の静脈栄養(熱量・アミノ酸処方量)と予後をみたリアルワールドデータ解析において、熱量の増加と院内死亡の調整オッズ比に関連は認められなかった。"], correctIndex: 1, explanation: "入院後7日までのエネルギー、窒素摂取量で経口摂取意欲群に有意に高い推移を示した。" },
+          { id: 68, question: "公認スライド「末梢静脈栄養の適正な活用について」の内容について、誤っているものを選びなさい。", choices: ["2022年のJSPENテキストブックにおいて、末梢静脈栄養は“脂肪乳剤を含む糖電解質を基準とした1500kcal程度のエネルギーを投与する栄養療法”として定義されている。", "FAO/WHOによって示された不可避窒素損失量は54mg/kg/日とされており、アミノ酸に換算すると体重50kgのヒトで26.3g/日となる。", "妊娠悪阻、消化器術後の症例などにおいて、ビタミンB1非併用のPPN療法時にビタミンB1欠乏症が発現したとの報告がある。"], correctIndex: 0, explanation: "JSPENテキストブックにおいてPPNは「1,000kcal前後のエネルギー量を末梢血管から投与する方法」とされている。" },
+          { id: 69, question: "公認スライド「慢性維持透析患者に対する静脈栄養管理」の内容について、正しいものを選びなさい。", choices: ["2019年の慢性維持透析患者の年齢別分布推移において、65歳を超える高齢者の割合は年々減少しており、2018年では全体の1/2程度となっている。", "2020年の透析患者に対する静脈栄養ならびに経腸栄養に関する提言において「透析療法に伴うアミノ酸・蛋白の喪失量に関わらず一日必要量以上のアミノ酸投与量を設定する必要がある」旨の記載がある。", "2020年の透析患者に対する静脈栄養ならびに経腸栄養に関する提言において「栄養管理はできる限り経口・経腸で行い、不必要な静脈栄養を安易に行わない」旨の記載がある。", "透析患者の栄養リスクを同定するツールとして、CRP、体重、中性脂肪の指標からなるNRI-JHが開発され、評価に用いられている。"], correctIndex: 2, explanation: "65歳を超える高齢者の割合は年々増加しており2/3を占める。喪失量を考慮して投与量を決定する。NRI-JHはアルブミン、BMI、コレステロール、クレアチニンを用いる。" },
+          { id: 70, question: "公認資材「末梢静脈栄養の適正な活用について」の内容について、正しいものを選びなさい。", choices: ["末梢静脈栄養は中心静脈栄養と比べると手技が煩雑である", "栄養ルートの選択アルゴリズムでは、経腸栄養の禁忌に該当する場合では消化管機能が回復しても静脈栄養のみで管理することを示している。", "末梢静脈栄養はルートの頻回な差換えや腕の不自由を生じさせないメリットがある。", "入院高齢者の喫食率は70~80%であるという報告がある。"], correctIndex: 3, explanation: "末梢静脈栄養はTPNと比べると手技が簡便である。消化管機能が回復したら腸を用いる栄養療法を導入する。頻回の差し替えや腕が自由にならない欠点がある。" },
+          { id: 71, question: "公認スライド「栄養療法と患者予後の関連」の内容について、誤っているものを選びなさい。", choices: ["ベッド上安静により、1日で約0.5%の除脂肪体重(LBM)が減少するという報告がある。", "低栄養リスク患者への個別的栄養介入の効果を検証した、2019年のEFFORT試験の介入群では、試験期間中のたんぱく質投与量は0.84±0.35g/kgとなっていた。", "EFFORT試験の追跡調査の結果から、介入が終了した後の150日間における生存患者割合で、介入群と対照群との差は認められなかった。", "TPN患者の栄養目標の達成と予後の関連を確認したリアルワールドデータの結果から、栄養管理のターゲットの達成群と一部達成群、非達成群の比較でADLの悪化においては達成群で良好な結果であったが、生存率においては3群に差は認められなかった。"], correctIndex: 3, explanation: "ターゲットの達成群において生存率が高く推移した。" },
+          { id: 72, question: "ビスコクリア電子添文について、ビスコクリアをEUSの超音波伝達媒体として使用する場合、内視鏡視野確保のために使用する場合、それぞれの注入量目安を選びなさい。", choices: ["EUS:50~400g 視野確保:200~600g", "EUS:200~600g 視野確保:50~400g", "EUS:600~900g 視野確保:200~600g", "EUS:50~400g 視野確保:600~900g"], correctIndex: 0, explanation: "超音波伝達媒体としての1検査当たりの注入量の目安は50~400gで、内視鏡視野の確保が1処置当たり目安量は200~600gである。" },
+          { id: 73, question: "公認資材「ビスコクリアレポート Vol.4」に記載されているGel immersion EMRの特徴として、誤っているものを選びなさい。", choices: ["水に比べ、短時間でGelを貯められる。", "腸液や残渣があっても良好な視野が保たれる。", "切除時の出血に対しても良好な視野で処置を行える。", "Underwater EMRと比べて多岐に渡る病変へ実施できる。", "気泡が入る事がある。"], correctIndex: 3, explanation: "Underwater EMRと比較して適応病変が幅広いわけでは無いが、短時間で病変部に貯める事ができ、良好な視野が確保を保ちやすい。" },
+          { id: 74, question: "公認スライド「オラネジン製品紹介」の内容について、正しいものを選びなさい。", choices: ["オラネジンとクロルヘキシジンアルコール製剤を比較した試験である。", "SSI発生率はオラネジン群10.2%、対照群13.0%、p=0.335で有意差はみられなかった。", "主要評価項目は表層切開創SSI発生率である。", "有害事象は紅斑、掻痒、皮膚炎があり、オラネジン群で合計5例であった。"], correctIndex: 3, explanation: "オラネジンとポビドンヨードを比較。SSI発生率はオラネジン群7%、対照群13%、p=0.002で有意差がみられた。主要評価項目は全SSI発生率である。" },
+          { id: 75, question: "公認資材「タムガイドレポートVol.1・Vol.2」で、赤色光を体表で確認するためのポイントとして誤っているものを選びなさい。", choices: ["胃内容物の影響を避けるために、栄養剤投与と挿入前に一定の時間を設ける。", "視認性向上のために部屋を暗くする", "胃壁と腹壁が隣接する位置までチューブ先端を余分(従来の挿入長より15~20cm程度)に進める", "胃内でのチューブ操作が必要(抵抗がないことを感じながらゆっくりと大きく出し入れを行う)"], correctIndex: 2, explanation: "従来の挿入長より5~10cm程度である。" },
+          { id: 76, question: "公認資材「タムガイドレポートVol.5」で、頸部における気管の走行位置と、経鼻胃管が気道に迷入してしまった場合の頸部での赤色光の見え方について、可能性が高いものを選びなさい。", choices: ["頸部左側に赤色光が強めに透過する", "頸部左側に位置するが光は確認されない", "頸部正中に赤色光が強めに透過する", "頸部右側に位置するが光は確認されない", "頸部正中に位置するが光は確認されない"], correctIndex: 2, explanation: "気管は頸部正中を食道よりも腹側を走行しているので、タムガイドの赤色光は強く見える可能性が高い。" },
+          { id: 77, question: "人工呼吸関連肺炎予防バンドル(2010年)に組み込まれているものとして、誤っているものを選びなさい。", choices: ["手指衛生を確実に実施する", "クロルヘキシジングルコン酸塩による口腔ケア", "人工呼吸器回路を頻回に交換しない", "適切な鎮静・鎮痛をはかる", "人工呼吸中の患者を仰臥位で管理しない"], correctIndex: 1, explanation: "日本ではクロルヘキシジングルコン酸塩の粘膜への使用は禁忌となっているため、バンドルに含まれていない。" },
+          { id: 78, question: "がん治療法で最も口腔粘膜炎のリスクが高いものを選びなさい。", choices: ["頭頸部化学放射線療法", "自家造血幹細胞移植", "骨髄抑制の強い化学療法", "標準的な化学療法", "頭頸部放射線療法"], correctIndex: 0, explanation: "頭頸部化学放射線療法(97%)、自家造血幹細胞移植(68%)、骨髄抑制の強い化学療法(50%)、標準的な化学療法(15%)、頭頸部放射線療法(50%)と記載されており、①が最もリスクが高い。" },
+          { id: 79, question: "正常な排尿とされる記載について、誤っているものを選びなさい。", choices: ["1回の排尿量: 200~400mL", "排尿にかかる時間:10~30秒", "1日の排尿量: 2,000~2,500 mL", "1日の排尿回数:5~7回", "排尿間隔: 3~5時間に1回"], correctIndex: 2, explanation: "1日の排尿量は1,000~1,500mLである。" },
+          { id: 80, question: "介助導尿に使用する物品とその処理方法について、正しいものを選びなさい。", choices: ["使い捨て尿器を使用した場合は、内容物を廃棄処理してから本体を粉砕機で処理する", "使い捨て尿器粉砕機の1稼働当たりの所要時間は約10分である", "再利用の尿器を使用した場合、マセレーターと呼ばれる機械で洗浄処理する場合もある。", "再利用の尿器を機械を使用せず洗浄する場合は0.1%クロルヘキシジン液に30分浸漬消毒する", "袋付きカテーテルを使用した場合、感染性廃棄物容器がある施設では、尿を廃棄せずカテーテルごと廃棄する。"], correctIndex: 4, explanation: "使い捨て尿器は排泄物ごと粉砕機に入れる。所要時間は約2分。再利用の尿器を洗浄するのはベッドパンウォッシャー。機械を使用しない場合は0.1%次亜塩素酸ナトリウム液で消毒する。" },
+          { id: 81, question: "オーラルフレイルにおける5項目のチェック項目 (OF-5)に該当しないものを選びなさい。", choices: ["口腔乾燥感", "咀嚼困難感", "嚥下困難感", "滑舌低下", "舌圧低下"], correctIndex: 4, explanation: "舌圧低下(低舌圧)は口腔機能低下症の診断項目で、OF-5の項目ではない。正解は「残存歯数減少」である。" },
+          { id: 82, question: "重症患者の経腸栄養リスクマネジメントの内容について、誤っているものを選びなさい。", choices: ["WHOの下痢の定義とブリストルスケール7を用いることでICUにおける下痢を定義する事ができる", "ブリストルスケールでは、数字が小さくなるほど、下痢傾向が強くなる(水様便はタイプ1となる)", "経腸栄養時の下痢はICU入室患者では、60~80%程度に発生すると報告されている", "排便量≥350g/日以上はエネルギーおよびタンパクが不足するリスクが高くなる"], correctIndex: 1, explanation: "ブリストルスケールは数字が大きくなるほど、下痢傾向が強くなる(水様便はタイプ7となる)。" },
+          { id: 83, question: "Friedらの身体的フレイルの判定基準の5項目について、誤っているものを選びなさい。", choices: ["体重減少", "筋肉量の減少", "主観的疲労感", "日常生活活動量の減少", "身体能力(歩行速度)の減弱"], correctIndex: 1, explanation: "筋肉量の減少ではなく、筋力(握力)の低下である。" },
+          { id: 84, question: "胃からの半固形化栄養法の特徴と実践のポイントの内容について、誤っているものを選びなさい。", choices: ["半固形栄養剤は、液体栄養剤に比べて、血糖値の上昇が抑制されていた。", "胃ろうからの半固形化栄養を行う際は、胃瘻カテーテルは内腔が広くチューブが短いものが投与に適している。", "半固形化栄養法に用いる栄養剤に関しては、粘度が高いほど逆流の頻度は減少するが、高すぎると注入が困難となる", "半固形化栄養の場合でも、液体栄養と同様に、注入後1時間程度姿勢を保持することが推奨されている"], correctIndex: 3, explanation: "半固形化栄養では注入後の安静は特に必要としない。" },
+          { id: 85, question: "食欲調査票(CNAQ-J)の内容について、誤っているものを選びなさい。", choices: ["要介護高齢者の口腔・栄養管理のガイドライン 2017でCNAQの有用性を推奨している。", "CNAQ-Jによる食欲の評価は要介護高齢者の死亡率と有意に関連していると報告された。", "CNAQ-Jは8つの質問1つずつに当てはまるものをチェックして合計点(満点:40点)を算出し、食欲を評価するものである。", "CNAQの得点が20点以下の時、6か月以内に少なくとも10%の体重減少のリスクを示すことが報告されている"], correctIndex: 3, explanation: "CNAQの得点が28点以下の時、6か月以内に少なくとも5%の体重減少のリスクを示すことがWilsonらから報告されている。" },
+          { id: 86, question: "リフィーディング症候群のハイリスク群として挙げられていない病態・患者を選びなさい。", choices: ["慢性アルコール中毒", "肥満患者", "悪性腫瘍", "高齢者", "長期の制酸剤や利尿薬の投与"], correctIndex: 1, explanation: "神経性やせ症、慢性アルコール中毒、悪性腫瘍、術後患者、高齢者、コントロール不良の糖尿病、慢性低栄養、長期の制酸剤投与、長期の利尿薬投与の病態・患者がハイリスク群として挙げられている。" },
+          { id: 87, question: "在宅療養高齢者の低栄養の現況と介入の必要性に関する記述として、正しいものを選びなさい。", choices: ["「リロケーションダメージ」とは高齢の入院患者が安静臥床などによって入院前のレベルにADL等が十分戻らないまま退院してしまう現象", "「HAD」とは、住み慣れた場所から馴染みの無い場所に転居したりして、環境が変化することでストレスがかかり心身に弊害を与えてしまう現象", "BMIが高いほど、平均よりも高い医療費を要するが、BMIが低い場合の医療費の指数は平均程度と報告されている。", "要介護度が高いほど、MNA-SFスコアが低く、その傾向に有意差が認められたと報告されている。"], correctIndex: 3, explanation: "①はHAD、②はリロケーションダメージの記載である。③BMIが高いほど、またBMIが低いほど、平均より高い医療費を要すると報告している。" },
+          { id: 88, question: "心不全と栄養療法の内容について、誤っているものを選びなさい。", choices: ["BMIが高いほど、心不全の発症リスクが増加する一方で、心不全発症後はBMIは低い方ほど全死亡リスクが増加する。", "心不全患者における食欲不振の原因として、うっ血・炎症の影響、加齢、治療薬、塩分制限などがある。", "FRAGILE-HF研究の2次解析の結果で、心不全患者の20.4%がGLIM基準で低栄養と診断されたと報告されている。", "症候性の心不全患者における塩分制限の有用性を示すエビデンスは乏しい。"], correctIndex: 2, explanation: "GLIM基準の低栄養と診断されたの割合は42.4%と報告されている。" },
+          { id: 89, question: "ONSの推奨事項の内容について、誤っているものを選びなさい。", choices: ["推奨事項の対象は栄養不良もしくはそのリスクのある高齢者である。", "提供するONSは、30g以上のタンパク質を含んだ最低限400kcal以上を推奨する。", "ONSを提供したら少なくとも3か月は継続する。ONSの効果は月に1回、評価する。", "退院後には栄養摂取を増強し体重を増加させて身体機能低下のリスクを減らすためにONSを提供するべき。"], correctIndex: 2, explanation: "ONSを提供したら少なくとも1か月は継続する。ONSの効果は月に1回、評価する。" },
+          { id: 90, question: "高血圧等の人の経口補水液摂取の内容について、誤っているものを選びなさい。", choices: ["食塩の摂取を制限されている方であっても、脱水症・熱中症のサインがあればすぐに対処をすることが必要である。", "OS-1 500mLの塩分量はみそ汁1杯と同様である", "スポーツドリンクとOS-1の違いは塩分量のみである。", "高血圧の人の熱中症予防について、夏でも塩分制限することが望まれている。", "高血圧治療ガイドライン2019において食塩は6g/日未満が目標とされている。"], correctIndex: 2, explanation: "糖質量も異なる。" },
+          { id: 91, question: "電解質異常(リン)の内容について、誤っているものを選びなさい。", choices: ["成人の体内には約600~700gのリンが存在し、約85%が骨に、約15%が細胞内に存在する。", "血清リン濃度の基準値は0.9~2.6mg/dlである。", "高リン血症の原因としてCKD(慢性腎臓病) [ステージ4~5]がある", "高リン血症に特異的な症状はない"], correctIndex: 1, explanation: "基準値は2.7~4.6mg/dLである。" },
+          { id: 92, question: "電解質異常(カルシウム)の内容について、誤っているものを選びなさい。", choices: ["体内のカルシウムは99%が骨に、残りの約1%が細胞内、そして0.1%未満が細胞外に存在する", "症候性の高カルシウム血症の場合の初期対応として、まず生理食塩液を点滴静注する。", "高カルシウム血症の原因としてビタミンD作用過剰、カルシウム過剰摂取、長期臥床等がある", "血液中のカルシウムは約90%がイオン化カルシウムとして存在し、残り10%はアルブミンなどと結合して存在している。"], correctIndex: 3, explanation: "血液中のCaは約50%がイオン化カルシウムとして存在し、残りの大部分はアルブミンなどと結合して存在している。" },
+          { id: 93, question: "輸液療法の考え方(基礎知識)の内容について、誤っているものを選びなさい。", choices: ["輸液療法は「欠乏(補充)輸液+維持輸液」という考え方で行う。", "尿素は細胞膜を移動できないので水の移動がおきる。", "輸液製剤の基本は生理食塩液と5%ブドウ糖液である", "5%ブドウ糖液は、溶血を起こさず純水を入れることができる。"], correctIndex: 1, explanation: "尿素は細胞膜を移動するので水自体は移動しない。" },
+          { id: 94, question: "輸液療法の考え方(脱水症)の内容について、誤っているものを選びなさい。", choices: ["「塩」と「水」バランス調節機構として浸透圧調節系と容量調節系(体液量減少時)がある。", "dehydration(高張性脱水)は血漿浸透圧が上昇し、口渇、尿量減少となる。", "volume depletion(低張性脱水)は、細胞外液と等張の体液が失われ、血圧低下、起立性低血圧となる。", "脱水の臨床症状として、無尿(<100mL/日)は中等症に該当する"], correctIndex: 3, explanation: "無尿は脱水の程度として、重症である。" },
+          { id: 95, question: "お問い合わせの多い輸液の配合変化事例について誤っているものを選びなさい。", choices: ["注射薬は単独で使用することを基本としており、輸液への混合はお勧めできない。", "配合変化とは物理的、化学的な変化(反応)で、期待された条件で投薬できなくなることである。", "配合可否の基準として、含量の残存率が表示量の80%以上を保つ時間内に投与されることを前提として配合が可能であるとする報告がある", "配合変化の要因として、室温・光・時間、配合手技、注射薬の特性に起因するものがある。"], correctIndex: 2, explanation: "配合可否の基準として、含量の残存率が表示量の90%以上を保つ時間内に投与されることを前提として配合が可能であるとする報告がある。" },
+          { id: 96, question: "腎臓内科医から見たNa異常症例への輸液療法の内容について、誤っているものを選びなさい。", choices: ["Na異常に伴って引き起こされる事象として最も警戒するのは浸透圧性脱髄症候群(ODS)である。", "真の低Na血症とは等張性低Na血症である。", "生理食塩液1000mL投与した場合、細胞間質に750mL、血管内に250mLの分布となる。", "慢性に進行したNa異常に対して急速な補正を行うと補正スピードの上限を意識して補正を行う。"], correctIndex: 1, explanation: "真の低Na血症とは低張性低Na血症である。" },
+          { id: 97, question: "がん化学療法・緩和ケアにおける脱水症の内容について、誤っているものを選びなさい。", choices: ["化学療法中の脱水は抗がん剤の副作用と異なる症状が出る。", "化学療法中の脱水は薬剤の血中濃度が高くなり、副作用が強く出やすい", "緩和ケアにおける脱水症は、ADLやQOLを低下させやすい", "緩和ケアにおける脱水症は痛みの閾値を低下させるために、持っている痛みを強く感じるようになる"], correctIndex: 0, explanation: "化学療法中の脱水は抗がん剤の副作用と類似の症状が出やすいといわれている。" },
+          { id: 98, question: "がん患者における電解質異常の内容について、誤っているものを選びなさい。", choices: ["がん患者さんにおける電解質異常は、低Na血症、高Ca血症、腫瘍崩壊症候群の3つが代表的である。", "がん患者における低Na血症の原因として、最も多いものが腎性塩類喪失症候群(RSWS)である。", "腫瘍関連SIADHの原因として、肺小細胞癌、頭頸部癌、シクロホスファミド等がある。", "がん患者さんの低ナトリウム血症の治療は一般的な低Na血症の治療と同様である。"], correctIndex: 1, explanation: "がん患者における低Na血症の原因として、最も多いものが抗利尿ホルモン不適切分泌症候群(SIADH)である。" },
+          { id: 99, question: "よくわかる酸塩基平衡とカリウム異常について、誤っているものを選びなさい。", choices: ["代謝性アルカローシスの原因として、嘔吐、胃液の吸引等がある。", "代謝性アシドーシス治療の原則は、直ちにアルカリ化剤を投与することである。", "腎機能が正常な患者は、通常高K血症にはならない", "急性期の高カリウム血症の治療として、グルコン酸カルシウムを使用するが、効果発現には2~3時間要する。"], correctIndex: 3, explanation: "グルコン酸カルシウム（カルチコール）の効果は数分で現れ、効果の持続は最大1時間であるため④が明確な誤り。" },
+          { id: 100, question: "公認スライド「カリウム異常とその補正~高カリウム血症~」の内容について、誤っているものを選びなさい。", choices: ["生体内におけるカリウム量を調節する機構には2種類あり、細胞内外のカリウムの移動、腎臓における尿中排泄である。", "腎機能が正常な患者は、通常高K血症にはならない", "レニンーアルドステロン系に影響し、アルドステロンの効果を低下させ高カリウム血症をきたす薬剤としてACE阻害薬、ARB、NSAIDS等がある。", "高カリウム血症は血清K+値5mEq/L以上である。", "急性期の高カリウム血症の治療として、心筋の膜の安定化のためグルコン酸カルシウムを使用するが、効果発現には2~3時間要する。"], correctIndex: 4, explanation: "グルコン酸カルシウム(カルチコール)の効果は数分で現れ、効果の持続は最大1時間である。" }
+        ]
+      }
+    };
 
-            if (isCorrectOption) {
-                return "bg-green-100 border-green-500 text-green-800 shadow-sm";
-            }
-            if (isSelectedOption && !isCorrectOption) {
-                return "bg-red-100 border-red-500 text-red-800 shadow-sm";
-            }
-            
-            return "bg-gray-50 border-gray-200 text-gray-400 opacity-60 cursor-not-allowed";
-        }
+    function PortalView({ onSelect, bookmarkCount, onStartBookmark }) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center pt-12 px-4 pb-12">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">確認テストポータル</h1>
+          <p className="text-gray-500 mb-8">受講するテストを選択して開始してください。</p>
+          
+          <div className="w-full max-w-[280px] mb-12">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative flex flex-col">
+              <h3 className="text-gray-600 font-bold mb-3 text-lg">付箋（ブックマーク）</h3>
+              <div className="text-5xl font-bold text-orange-500 mb-6">{bookmarkCount}</div>
+              <button 
+                onClick={onStartBookmark}
+                disabled={bookmarkCount === 0}
+                className={`w-full py-3 rounded-xl font-bold transition-colors ${bookmarkCount > 0 ? 'bg-[#fef4ce] text-[#a45e12] hover:bg-[#faeeb1]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+              >
+                付箋の問題を解く
+              </button>
+            </div>
+          </div>
 
-        // --- 5. クイズアクションハンドラ ---
-        window.handleOptionClick = function(index) {
-            if (isAnswered) return;
-            
-            selectedOption = index;
-            isAnswered = true;
-            
-            if (index === activeQuizData[currentQuestion].correctAnswer) {
-                score++;
-            }
-            
-            render();
-        };
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+            <div 
+              onClick={() => onSelect('basic')}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex flex-col h-full"
+            >
+              <div className="bg-blue-50 w-14 h-14 rounded-2xl flex items-center justify-center text-blue-600 mb-6">
+                <StethoscopeIcon />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-3">{QUIZ_DATA.basic.title}</h2>
+              <p className="text-gray-500 text-sm mb-8 flex-grow">{QUIZ_DATA.basic.desc}</p>
+              
+              <div className="flex justify-between items-center mt-auto">
+                <span className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-medium">
+                  {QUIZ_DATA.basic.countLabel}
+                </span>
+                <span className="text-blue-600 font-bold flex items-center gap-1 text-sm">
+                  開始する <ArrowRightIcon className="w-4 h-4" />
+                </span>
+              </div>
+            </div>
 
-        window.handleNextQuestion = function() {
-            if (currentQuestion < activeQuizData.length - 1) {
-                // 10問ごとの区切り判定
-                if ((currentQuestion + 1) % 10 === 0) {
-                    showIntermediate = true;
-                } else {
-                    currentQuestion++;
-                    selectedOption = null;
-                    isAnswered = false;
-                }
-            } else {
-                showResult = true;
-            }
-            render();
-        };
+            <div 
+              onClick={() => onSelect('advance')}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex flex-col h-full"
+            >
+              <div className="bg-blue-50 w-14 h-14 rounded-2xl flex items-center justify-center text-blue-600 mb-6">
+                <ScaleIcon />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-3">{QUIZ_DATA.advance.title}</h2>
+              <p className="text-gray-500 text-sm mb-8 flex-grow">{QUIZ_DATA.advance.desc}</p>
+              
+              <div className="flex justify-between items-center mt-auto">
+                <span className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-medium">
+                  {QUIZ_DATA.advance.countLabel}
+                </span>
+                <span className="text-blue-600 font-bold flex items-center gap-1 text-sm">
+                  開始する <ArrowRightIcon className="w-4 h-4" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-        window.continueQuiz = function() {
-            showIntermediate = false;
-            currentQuestion++;
-            scoreAtBlockStart = score;
-            selectedOption = null;
-            isAnswered = false;
-            render();
-        };
+    function QuizView({ quizData, currentIndex, onNextQuestion, onBack, onJump, bookmarkedIds, onToggleBookmark }) {
+      const [selectedIdx, setSelectedIdx] = useState(null);
+      const [isAnswered, setIsAnswered] = useState(false);
+      
+      const total = quizData.questions.length;
+      const question = quizData.questions[currentIndex];
 
-        window.redoCurrentBlock = function() {
-            showIntermediate = false;
-            currentQuestion = Math.floor(currentQuestion / 10) * 10;
-            score = scoreAtBlockStart;
-            selectedOption = null;
-            isAnswered = false;
-            render();
-        };
+      useEffect(() => {
+        setSelectedIdx(null);
+        setIsAnswered(false);
+      }, [currentIndex, question]);
 
-        window.restartQuiz = function() {
-            currentQuestion = 0;
-            score = 0;
-            scoreAtBlockStart = 0;
-            showResult = false;
-            showIntermediate = false;
-            selectedOption = null;
-            isAnswered = false;
-            render();
-        };
+      const handleChoiceClick = (idx) => {
+        if (isAnswered) return;
+        setSelectedIdx(idx);
+        setIsAnswered(true);
+      };
 
-        // --- 6. 描画ロジック ---
-        function render() {
-            const app = document.getElementById('app');
+      const handleNext = () => {
+        const isCorrect = selectedIdx === question.correctIndex;
+        onNextQuestion(isCorrect);
+      };
 
-            if (currentView === 'menu') {
-                app.innerHTML = `
-                    <div class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                        <div class="max-w-4xl w-full animate-fade-in">
-                            <div class="text-center mb-12">
-                                <h1 class="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">確認テストポータル</h1>
-                                <p class="text-gray-500 text-lg">受講するテストを選択して開始してください。</p>
-                            </div>
-                            
-                            <div class="grid md:grid-cols-2 gap-6">
-                                <!-- OPLUS Card -->
-                                <button onclick="startQuiz('oplus')" class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-8 text-left group border border-gray-100 hover:border-blue-400">
-                                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                        ${icons.stethoscope}
-                                    </div>
-                                    <h2 class="text-2xl font-bold text-gray-800 mb-2">2026OPLUS確認テスト</h2>
-                                    <p class="text-gray-500 mb-6 line-clamp-2 text-sm">栄養管理、リアルワールドデータ、各種疾患・治療などに関する総合的な確認テストです。</p>
-                                    
-                                    <div class="flex items-center justify-between border-t border-gray-50 pt-4 mt-auto">
-                                        <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-md bg-gray-100 text-gray-600 text-sm font-medium">
-                                            全75問
-                                        </span>
-                                        <span class="flex items-center text-blue-600 font-bold group-hover:translate-x-1 transition-transform">
-                                            開始する <span class="ml-1">${icons.arrowRight}</span>
-                                        </span>
-                                    </div>
-                                </button>
-                                
-                                <!-- Compliance Card -->
-                                <button onclick="startQuiz('compliance')" class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-8 text-left group border border-gray-100 hover:border-indigo-400">
-                                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                        ${icons.scale}
-                                    </div>
-                                    <h2 class="text-2xl font-bold text-gray-800 mb-2">コンプライアンス確認テスト</h2>
-                                    <p class="text-gray-500 mb-6 line-clamp-2 text-sm">プロモーションコード、医療機関等への資金提供、寄附などのルールに関する確認テストです。</p>
-                                    
-                                    <div class="flex items-center justify-between border-t border-gray-50 pt-4 mt-auto">
-                                        <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-md bg-gray-100 text-gray-600 text-sm font-medium">
-                                            全45問
-                                        </span>
-                                        <span class="flex items-center text-indigo-600 font-bold group-hover:translate-x-1 transition-transform">
-                                            開始する <span class="ml-1">${icons.arrowRight}</span>
-                                        </span>
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
+      const blocks = [];
+      for (let i = 0; i < total; i += 10) {
+        const end = Math.min(i + 10, total);
+        blocks.push({ label: `Q${i + 1}~Q${end}`, startIndex: i });
+      }
+      const currentBlockIndex = Math.floor(currentIndex / 10) * 10;
 
-            // --- 以下のロジックは currentView === 'quiz' の場合 ---
+      return (
+        <div className="min-h-screen bg-slate-50 py-8 px-4">
+          <div className="max-w-3xl mx-auto">
+            <button 
+              onClick={onBack}
+              className="flex items-center gap-1 text-gray-500 hover:text-blue-600 font-bold mb-4 transition-colors"
+            >
+              <ArrowLeftIcon className="w-5 h-5" /> ポータルへ戻る
+            </button>
 
-            // 結果画面
-            if (showResult) {
-                const percentage = Math.round((score / activeQuizData.length) * 100);
-                let message = "";
-                if (percentage === 100) message = "パーフェクト！完璧な理解です。";
-                else if (percentage >= 80) message = "素晴らしい成績です！実務でもバッチリですね。";
-                else if (percentage >= 60) message = "合格点です。間違えた箇所を復習しておきましょう。";
-                else message = "もう一度資料を読み直して、再チャレンジしましょう！";
-
-                app.innerHTML = `
-                    <div class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                        <div class="bg-white max-w-2xl w-full rounded-2xl shadow-xl overflow-hidden p-8 text-center animate-fade-in">
-                            <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                ${icons.trophy}
-                            </div>
-                            <h2 class="text-3xl font-bold text-gray-800 mb-2">テスト結果</h2>
-                            <p class="text-gray-500 mb-8">${activeQuizTitle} (全${activeQuizData.length}問)</p>
-                            
-                            <div class="text-6xl font-bold text-blue-600 mb-4">
-                                ${score} <span class="text-2xl text-gray-400">/ ${activeQuizData.length}</span>
-                            </div>
-                            <p class="text-xl text-gray-700 font-medium mb-8">${message}</p>
-                            
-                            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button onclick="backToMenu()" class="inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-8 rounded-full transition-colors duration-200">
-                                    メニューへ戻る
-                                </button>
-                                <button onclick="restartQuiz()" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-full transition-colors duration-200">
-                                    ${icons.rotateCcw} もう一度挑戦する
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            // 中間結果（10問区切り）画面
-            if (showIntermediate) {
-                app.innerHTML = `
-                    <div class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                        <div class="bg-white max-w-2xl w-full rounded-2xl shadow-xl overflow-hidden p-8 text-center animate-fade-in relative">
-                            <button onclick="backToMenu()" class="absolute top-4 left-4 flex items-center text-gray-500 hover:text-gray-800 transition text-sm font-medium">
-                                ${icons.arrowLeft} メニュー
-                            </button>
-                            
-                            <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 mt-4">
-                                <svg class="w-10 h-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            </div>
-                            <h2 class="text-3xl font-bold text-gray-800 mb-2">区切りポイント</h2>
-                            <p class="text-gray-500 mb-8">お疲れ様です！ ${currentQuestion + 1}問目まで終了しました。</p>
-                            
-                            <div class="text-4xl font-bold text-indigo-600 mb-2">
-                                直近10問の正解数: <span class="text-5xl">${score - scoreAtBlockStart}</span> <span class="text-xl text-gray-400">/ 10</span>
-                            </div>
-                            <p class="text-gray-500 mb-8">ここまでのトータル正解数: ${score} / ${currentQuestion + 1}</p>
-                            
-                            <p class="text-lg text-gray-700 font-medium mb-10">このまま次の問題へ進みますか？</p>
-                            
-                            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button onclick="redoCurrentBlock()" class="inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-8 rounded-full transition-colors duration-200">
-                                    ${icons.rotateCcw} 前の10問をやり直す
-                                </button>
-                                <button onclick="continueQuiz()" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-full transition-colors duration-200 shadow-md">
-                                    続ける (次の問題へ) ${icons.arrowRight}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            // 通常のテスト画面
-            const currentQ = activeQuizData[currentQuestion];
-            const progress = ((currentQuestion + 1) / activeQuizData.length) * 100;
-            
-            // 出典の表示（コンプライアンスの場合は「出典: 」をつけるなどの配慮）
-            const sourceText = activeQuizTitle === "コンプライアンス確認テスト" && !currentQ.source.startsWith("出典") 
-                                ? `出典: ${currentQ.source}` 
-                                : currentQ.source;
-
-            // 選択肢HTMLの構築
-            let optionsHtml = '';
-            currentQ.options.forEach((option, index) => {
-                let iconHtml = '';
-                if (isAnswered) {
-                    if (index === currentQ.correctAnswer) {
-                        iconHtml = icons.checkCircle;
-                    } else if (index === selectedOption && index !== currentQ.correctAnswer) {
-                        iconHtml = icons.xCircle;
-                    }
-                }
-
-                optionsHtml += `
-                    <button
-                        onclick="handleOptionClick(${index})"
-                        ${isAnswered ? 'disabled' : ''}
-                        class="w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group ${getOptionStyle(index)}"
-                    >
-                        <span class="font-medium">${option}</span>
-                        ${iconHtml}
-                    </button>
-                `;
-            });
-
-            // 解説HTMLの構築
-            let explanationHtml = '';
-            if (isAnswered) {
-                const isCorrect = selectedOption === currentQ.correctAnswer;
-                explanationHtml = `
-                    <div class="animate-fade-in mt-6">
-                        <div class="rounded-2xl p-6 mb-6 ${isCorrect ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'}">
-                            <div class="flex items-start gap-3">
-                                ${isCorrect ? icons.checkCircleLg : icons.alertCircle}
-                                <div>
-                                    <h3 class="font-bold text-lg mb-2 ${isCorrect ? 'text-green-800' : 'text-red-800'}">
-                                        ${isCorrect ? '正解！' : '不正解...'}
-                                    </h3>
-                                    <p class="text-gray-700 leading-relaxed">
-                                        <span class="font-semibold block mb-1">【解説】</span>
-                                        ${currentQ.explanation}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <button
-                                onclick="handleNextQuestion()"
-                                class="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-xl transition-colors duration-200 shadow-md"
-                            >
-                                ${currentQuestion < activeQuizData.length - 1 ? '次の問題へ' : '結果を見る'}
-                                ${icons.arrowRight}
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-
-            // 全体の組み立て
-            app.innerHTML = `
-                <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-                    <div class="max-w-3xl mx-auto animate-fade-in">
-                        
-                        <!-- トップナビゲーション -->
-                        <div class="mb-6 flex justify-between items-center">
-                            <button onclick="backToMenu()" class="flex items-center text-gray-500 hover:text-gray-800 transition font-medium text-sm bg-white border border-gray-200 py-1.5 px-3 rounded-lg shadow-sm hover:shadow">
-                                ${icons.arrowLeft} メニューに戻る
-                            </button>
-                        </div>
-
-                        <!-- ヘッダー＆プログレスバー -->
-                        <div class="mb-8">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                                <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                    ${icons.bookOpen}
-                                    ${activeQuizTitle}
-                                </h1>
-                                <span class="text-sm font-medium text-gray-500 bg-white border border-gray-200 shadow-sm py-1.5 px-4 rounded-full inline-block text-center whitespace-nowrap">
-                                    問題 ${currentQuestion + 1} / ${activeQuizData.length}
-                                </span>
-                            </div>
-                            <div class="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                                <div 
-                                    class="h-full ${activeQuizTitle.includes('コンプライアンス') ? 'bg-indigo-500' : 'bg-blue-600'} transition-all duration-300 ease-out"
-                                    style="width: ${progress}%"
-                                ></div>
-                            </div>
-                        </div>
-
-                        <!-- 問題カード -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                            <div class="p-6 sm:p-8 ${activeQuizTitle.includes('コンプライアンス') ? 'bg-indigo-50/50' : 'bg-blue-50/50'} border-b border-gray-100">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <span class="${activeQuizTitle.includes('コンプライアンス') ? 'bg-indigo-100 text-indigo-800' : 'bg-blue-100 text-blue-800'} text-xs font-bold px-2.5 py-0.5 rounded">
-                                        ${sourceText}
-                                    </span>
-                                </div>
-                                <h2 class="text-lg sm:text-xl font-medium text-gray-800 leading-relaxed">
-                                    ${currentQ.question}
-                                </h2>
-                            </div>
-                            
-                            <div class="p-6 sm:p-8 space-y-3">
-                                ${optionsHtml}
-                            </div>
-                        </div>
-
-                        <!-- 解説＆次へボタン -->
-                        ${explanationHtml}
-
-                    </div>
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-bold text-gray-500 hidden md:inline">{quizData.title}</span>
+                <div className="flex items-center gap-3 ml-auto">
+                  <select
+                    value={currentBlockIndex}
+                    onChange={(e) => onJump(Number(e.target.value))}
+                    className="border border-gray-300 rounded-lg text-sm py-1.5 px-3 text-gray-700 bg-white font-medium cursor-pointer hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                  >
+                    {blocks.map(block => (
+                      <option key={block.startIndex} value={block.startIndex}>
+                        {block.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-sm font-bold text-gray-500">Q {currentIndex + 1} / {total}</span>
                 </div>
-            `;
+              </div>
+              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                  style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+              <div className="flex justify-between items-start mb-6 gap-4">
+                <h2 className="text-lg md:text-xl font-bold text-gray-900 leading-relaxed">
+                  {question.question}
+                </h2>
+                <button 
+                  onClick={() => onToggleBookmark(question.id)}
+                  className={`flex-shrink-0 p-2 rounded-full transition-colors ${bookmarkedIds.includes(question.id) ? 'bg-orange-50 text-orange-500' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}`}
+                  title="付箋（ブックマーク）をつける"
+                >
+                  <BookmarkIcon solid={bookmarkedIds.includes(question.id)} className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-3 mb-8">
+                {question.choices.map((choice, idx) => {
+                  const isSelected = selectedIdx === idx;
+                  const isCorrectOption = idx === question.correctIndex;
+                  
+                  let btnClass = "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 font-medium ";
+                  
+                  if (!isAnswered) {
+                    btnClass += isSelected 
+                      ? "border-blue-500 bg-blue-50 text-blue-900" 
+                      : "border-gray-100 hover:border-blue-200 hover:bg-gray-50 text-gray-700";
+                  } else {
+                    if (isCorrectOption) {
+                      btnClass += "border-green-500 bg-green-50 text-green-900";
+                    } else if (isSelected && !isCorrectOption) {
+                      btnClass += "border-red-500 bg-red-50 text-red-900";
+                    } else {
+                      btnClass += "border-gray-100 text-gray-400 opacity-60";
+                    }
+                  }
+
+                  return (
+                    <button 
+                      key={idx} 
+                      className={btnClass}
+                      onClick={() => handleChoiceClick(idx)}
+                      disabled={isAnswered}
+                    >
+                      {choice}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {isAnswered && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className={`p-5 rounded-xl mb-6 border-l-4 ${selectedIdx === question.correctIndex ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
+                    <p className={`font-bold text-lg mb-3 ${selectedIdx === question.correctIndex ? 'text-green-800' : 'text-red-800'}`}>
+                      {selectedIdx === question.correctIndex ? '正解！' : '不正解'}
+                    </p>
+                    <div className="text-sm md:text-base text-gray-800 bg-white/80 p-4 rounded-lg">
+                      <span className="font-bold block mb-1">【解説】</span>
+                      {question.explanation}
+                    </div>
+                  </div>
+                  <button 
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors flex items-center justify-center gap-2 text-lg shadow-md hover:shadow-lg"
+                    onClick={handleNext}
+                  >
+                    次へ <ArrowRightIcon />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function IntermissionView({ onContinue, onRetry, currentCount }) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircleIcon />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">一区切りです！</h2>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              ここまで <span className="font-bold text-blue-600 text-xl">{currentCount}</span> 問完了しました。<br/>
+              このまま次の問題へ進むか、<br/>直近の10問をやり直すか選択してください。
+            </p>
+            
+            <div className="space-y-4">
+              <button 
+                onClick={onContinue}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors shadow-sm"
+              >
+                次へ進む
+              </button>
+              <button 
+                onClick={onRetry}
+                className="w-full py-4 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-xl font-bold transition-colors"
+              >
+                10問前からやり直す
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ResultView({ quizData, answers, onHome }) {
+      const correctCount = answers.filter(Boolean).length;
+      const totalCount = quizData.questions.length;
+      const percentage = Math.round((correctCount / totalCount) * 100);
+
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center animate-in zoom-in-95 duration-500">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">テスト終了</h2>
+            <p className="text-gray-500 mb-8">{quizData.title}</p>
+            
+            <div className="relative w-40 h-40 mx-auto mb-8">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-gray-100"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none" stroke="currentColor" strokeWidth="3"
+                />
+                <path
+                  className="text-blue-500"
+                  strokeDasharray={`${percentage}, 100`}
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none" stroke="currentColor" strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold text-gray-900">{percentage}%</span>
+                <span className="text-xs text-gray-500 font-medium">正答率</span>
+              </div>
+            </div>
+            
+            <p className="text-lg font-medium text-gray-700 mb-8">
+              {totalCount}問中 <span className="font-bold text-2xl text-blue-600">{correctCount}</span> 問正解
+            </p>
+
+            <button 
+              onClick={onHome}
+              className="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold transition-colors shadow-sm"
+            >
+              ポータルへ戻る
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [currentMode, setCurrentMode] = useState('portal'); // 'portal' | 'quiz' | 'intermission' | 'result'
+      const [selectedType, setSelectedType] = useState(null); // 'basic' | 'advance' | 'bookmark'
+      const [activeQuizData, setActiveQuizData] = useState(null);
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [answers, setAnswers] = useState([]);
+      
+      // デフォルトで3つほど付箋を付けています
+      const [bookmarkedIds, setBookmarkedIds] = useState([1, 2, 61]);
+
+      const handleStartTest = (type) => {
+        setSelectedType(type);
+        setActiveQuizData(QUIZ_DATA[type]);
+        setCurrentIndex(0);
+        setAnswers([]);
+        setCurrentMode('quiz');
+      };
+
+      const handleStartBookmarkTest = () => {
+        const allQuestions = [...QUIZ_DATA.basic.questions, ...QUIZ_DATA.advance.questions];
+        const bookmarkedQuestions = allQuestions.filter(q => bookmarkedIds.includes(q.id));
+        
+        setSelectedType('bookmark');
+        setActiveQuizData({
+          title: "付箋（ブックマーク）",
+          desc: "ブックマークした問題のみ出題されます。",
+          countLabel: `全${bookmarkedQuestions.length}問`,
+          questions: bookmarkedQuestions
+        });
+        setCurrentIndex(0);
+        setAnswers([]);
+        setCurrentMode('quiz');
+      };
+
+      const handleToggleBookmark = (id) => {
+        setBookmarkedIds(prev => 
+          prev.includes(id) ? prev.filter(bid => bid !== id) : [...prev, id]
+        );
+      };
+
+      const handleNextQuestion = (isCorrect) => {
+        const newAnswers = [...answers, isCorrect];
+        setAnswers(newAnswers);
+        
+        if (currentIndex + 1 >= activeQuizData.questions.length) {
+          setCurrentMode('result');
+        } else if ((currentIndex + 1) % 10 === 0) {
+          setCurrentMode('intermission');
+        } else {
+          setCurrentIndex(currentIndex + 1);
         }
+      };
 
-        // 初期描画（メニュー画面）の実行
-        render();
+      const handleIntermissionContinue = () => {
+        setCurrentIndex(currentIndex + 1);
+        setCurrentMode('quiz');
+      };
 
-    </script>
+      const handleIntermissionRetry = () => {
+        const rewindIndex = Math.max(0, currentIndex - 9);
+        setCurrentIndex(rewindIndex);
+        setAnswers(prev => prev.slice(0, rewindIndex));
+        setCurrentMode('quiz');
+      };
+
+      const handleGoHome = () => {
+        setCurrentMode('portal');
+        setSelectedType(null);
+        setActiveQuizData(null);
+      };
+
+      const handleJump = (startIndex) => {
+        setCurrentIndex(startIndex);
+        setAnswers(new Array(startIndex).fill(null));
+        setCurrentMode('quiz');
+      };
+
+      return (
+        <div className="antialiased text-gray-900 font-sans">
+          {currentMode === 'portal' && (
+            <PortalView 
+              onSelect={handleStartTest} 
+              bookmarkCount={bookmarkedIds.length}
+              onStartBookmark={handleStartBookmarkTest}
+            />
+          )}
+          
+          {currentMode === 'quiz' && activeQuizData && (
+            <QuizView 
+              quizData={activeQuizData} 
+              currentIndex={currentIndex} 
+              onNextQuestion={handleNextQuestion} 
+              onBack={handleGoHome}
+              onJump={handleJump}
+              bookmarkedIds={bookmarkedIds}
+              onToggleBookmark={handleToggleBookmark}
+            />
+          )}
+          
+          {currentMode === 'intermission' && (
+            <IntermissionView 
+              currentCount={currentIndex + 1}
+              onContinue={handleIntermissionContinue} 
+              onRetry={handleIntermissionRetry} 
+            />
+          )}
+          
+          {currentMode === 'result' && activeQuizData && (
+            <ResultView 
+              quizData={activeQuizData}
+              answers={answers}
+              onHome={handleGoHome}
+            />
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
